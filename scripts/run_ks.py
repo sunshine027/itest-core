@@ -27,15 +27,18 @@ def cd(path):
     yield
     os.chdir(old)
 
+
 def escape_log(log):
-    '''escape some control characters which can't be recognized by xml
+    '''Escape some control characters which can't be recognized by xml.
     '''
     utext = log.decode(_CODEC, 'ignore')
     utext = escape_xml_illegal_chars(utext, '')
     return utext
 
+
 def escape_xml_illegal_chars(val, replacement='?'):
-    '''replace special characters with value of variable replacement
+    '''Replace special characters with value of replacement.
+
     x0 - x8 | xB | xC | xE - x1F
     (most control characters, though TAB, CR, LF allowed)
     xD800 - #xDFFF
@@ -47,6 +50,7 @@ def escape_xml_illegal_chars(val, replacement='?'):
     '''
     return _ILLEGAL_XML_CHARS_RE.sub(replacement, val)
 
+
 def make_tmp_dir(ks):
     now = datetime.now().strftime('_%Y%m%d%H%M%S')
     tmp_dir = os.path.join(TMP_DIR, ks + now)
@@ -55,19 +59,9 @@ def make_tmp_dir(ks):
 
 
 def run_mic(ks, verbose=False):
-    # make a temp dir to run mic in it
-    tmp_dir = make_tmp_dir(ks)
-    shutil.copy2(os.path.join(RUNNING_DIR, ks), tmp_dir)
-
+    print 'start to run:', ks
     start = time.time()
-    with cd(tmp_dir):
-        result = _run_mic(ks, verbose)
-    result.cost = time.time() - start
-    return result
-
-def _run_mic(ks, verbose):
     mic_log = '%s.log' % ks
-
     expecting = [(SUDO_PASS_PROMPT_PATTERN, SUDO_PASSWD)]
 
     prefix = 'sudo '
@@ -81,7 +75,6 @@ def _run_mic(ks, verbose):
 
     command = prefix + 'mic cr auto %s --logfile=%s'  %(ks, mic_log)
     print command
-
     try:
         status = pcall(command,
                        expecting=expecting,
@@ -93,11 +86,10 @@ def _run_mic(ks, verbose):
     finally:
         if not verbose:
             output.close()
-
     return Result(ks,
                   os.getcwd(),
                   status,
-                  os.path.abspath(log))
+                  os.path.abspath(log), time.time()-start)
 
 
 def move_ks(base, from_, to):
@@ -106,6 +98,7 @@ def move_ks(base, from_, to):
 
 
 class Result(object):
+    OUTPUT = 'mic-output'
 
     def __init__(self, ks, tmpdir, status, log, cost=None):
         self.ks = ks
@@ -121,13 +114,11 @@ class Result(object):
         if self.status != 0 and os.path.exists(self.log):
             with open(self.log) as fp:
                 content = fp.read()
-
             if self._is_network_error(content):
                 return True
 
-    OUTPUT = 'mic-output'
-
     def _does_image_exist(self):
+        #FIXME: maybe we can do this more accurately by parse the magic line
         # *.img is created by loop format
         pattern1 = os.path.join(self.OUTPUT, '*.img')
         print 'checking image[1]:', pattern1
@@ -219,6 +210,39 @@ def generate_xunit_report(success, failure):
         file.write(xml.encode(_CODEC))
 
 
+def check_result(result, ks, success, failure):
+    '''Check if mic run successfully with this ks.
+
+    For the definition of success, it will check if image exist
+    in mic-output directory. Here it only checks if some file ends with
+    '.img, .raw, .usbimg, .iso, .zip, .tar, .gz, .bz2' exist, and moreover if
+    it failed, it will check if it should run this ks again, like
+    resulting from  unstalble network, but this hasn't been implemented now.
+    '''
+    meta = read_meta(META_FILE)
+    if result.is_successful():
+        print 'ok:', ks
+        move_ks(ks, RUNNING_DIR, OK_DIR)
+        success.append({
+                'classname': meta[result.ks]['classname'],
+                'name': meta[result.ks]['name'],
+                'time': result.cost,
+                })
+    elif result.need_run_again():
+        print 'plan to run again:', ks
+        move_ks(ks, RUNNING_DIR, PENDING_DIR)
+    else:
+        print 'failed:', ks
+        move_ks(ks, RUNNING_DIR, FAILED_DIR)
+        failure.append({
+                'classname': meta[result.ks]['classname'],
+                'name': meta[result.ks]['name'],
+                'time': result.cost,
+                'message': 'see log in %s' % os.path.basename(result.log),
+                'log': escape_log(open(result.log).read()),
+                })
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -235,44 +259,21 @@ def main(opts):
         if not files: # empty queue
             break
         ks = os.path.basename(files[0])
-
         move_ks(ks, PENDING_DIR, RUNNING_DIR)
-        print 'start to run:', ks
-        result = run_mic(ks, opts.verbose)
+        # make a temp dir to run mic in it
+        tmp_dir = make_tmp_dir(ks)
+        shutil.copy2(os.path.join(RUNNING_DIR, ks), tmp_dir)
+        with cd(tmp_dir):
+            result = run_mic(ks, opts.verbose)
+            check_result(result, ks, success, failure)
         i += 1
-
-        meta = read_meta(META_FILE)
-        if result.is_successful():
-            print 'ok:', ks
-            move_ks(ks, RUNNING_DIR, OK_DIR)
-            success.append({
-                    'classname': meta[result.ks]['classname'],
-                    'name': meta[result.ks]['name'],
-                    'time': result.cost,
-                    })
-        elif result.need_run_again():
-            print 'plan to run again:', ks
-            move_ks(ks, RUNNING_DIR, PENDING_DIR)
-        else:
-            print 'failed:', ks
-            move_ks(ks, RUNNING_DIR, FAILED_DIR)
-            failure.append({
-                    'classname': meta[result.ks]['classname'],
-                    'name': meta[result.ks]['name'],
-                    'time': result.cost,
-                    'message': 'see log in %s' % os.path.basename(result.log),
-                    'log': escape_log(open(result.log).read()),
-                    })
 
     print 'DONE:', i, 'jobs'
     generate_xunit_report(success, failure)
 
 
 if __name__ == '__main__':
-    opts = parse_args()
-
     pwd = os.path.abspath(os.getcwd())
-
     queue = os.path.join(pwd, 'queue')
     if not os.path.exists(queue):
         print >> sys.stderr, 'no queue path found'
@@ -285,4 +286,5 @@ if __name__ == '__main__':
     TMP_DIR     = os.path.join(pwd, 'tmp')
     META_FILE   = os.path.join(queue, 'meta')
 
+    opts = parse_args()
     main(opts)
