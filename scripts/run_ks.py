@@ -5,6 +5,7 @@ import glob
 import shutil
 import argparse
 import traceback
+import re
 from datetime import datetime
 from contextlib import contextmanager
 
@@ -14,6 +15,8 @@ from itest.case import pcall, SUDO_PASS_PROMPT_PATTERN
 SUDO_PASSWD = os.environ.get('ITEST_SUDO_PASSWD', '123456')
 RUN_MIC_TIMEOUT = 60*60*2
 
+_CODEC='utf8'
+_ILLEGAL_XML_CHARS_RE = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
 @contextmanager
 def cd(path):
@@ -24,6 +27,25 @@ def cd(path):
     yield
     os.chdir(old)
 
+def escape_log(log):
+    '''escape some control characters which can't be recognized by xml
+    '''
+    utext = log.decode(_CODEC, 'ignore')
+    utext = escape_xml_illegal_chars(utext, '')
+    return utext
+
+def escape_xml_illegal_chars(val, replacement='?'):
+    '''replace special characters with value of variable replacement
+    x0 - x8 | xB | xC | xE - x1F
+    (most control characters, though TAB, CR, LF allowed)
+    xD800 - #xDFFF
+    (unicode surrogate characters)
+    xFFFE | #xFFFF |
+    (unicode end-of-plane non-characters)
+    >= 110000
+    that would be beyond unicode!!!
+    '''
+    return _ILLEGAL_XML_CHARS_RE.sub(replacement, val)
 
 def make_tmp_dir(ks):
     now = datetime.now().strftime('_%Y%m%d%H%M%S')
@@ -194,7 +216,7 @@ def generate_xunit_report(success, failure):
 
     xml_filename = 'report.xml'
     with open(xml_filename, 'w') as file:
-        file.write(xml)
+        file.write(xml.encode(_CODEC))
 
 
 def parse_args():
@@ -239,7 +261,7 @@ def main(opts):
                     'name': meta[result.ks]['name'],
                     'time': result.cost,
                     'message': 'see log in %s' % os.path.basename(result.log),
-                    'log': open(result.log).read(),
+                    'log': escape_log(open(result.log).read()),
                     })
 
     print 'DONE:', i, 'jobs'
