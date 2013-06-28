@@ -1,0 +1,14 @@
+Source: itest
+Section: devel
+Priority: extra
+Maintainer: Junchun Guan <junchunx.guan@intel.com>
+Build-Depends: debhelper (>= 7.0.15), python-dev, python-setuptools
+Standards-Version: 3.8.0
+X-Python-Version: >= 2.7
+Homepage: http://www.tizen.org
+
+Package: itest
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends},
+ python-pexpect, python-mako (>= 0.4), python-nose, python-coverage
+Description: functional test framework for gbs and mic

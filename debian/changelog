@@ -1,0 +1,34 @@
+itest (1.3) unstable; urgency=high
+  * Upgrade to itest1.3, which contains the following bug fixing & features:
+    * Redesign test report. Add failed summary report
+    * Add datetime info to log file when cases begin and end
+    * Set timezone in test env
+    * Add itest dependencies
+
+ -- Junchun Guan <junchunx.guan@intel.com>  Thu, 24 Jan 2013 11:45:08 +0800
+
+itest (1.2) unstable; urgency=high
+  * Upgrade to itest1.2, which contains the following bug fixing & features:
+    * Exit with nonzero value when any case failed
+    * Reduce output log when run auto sync
+    * Support setup and teardown section in test case
+    * Support coverage report
+
+ -- Junchun Guan <junchunx.guan@intel.com>  Thu, 24 Jan 2013 11:45:08 +0800
+
+itest (1.1) unstable; urgency=high
+  * Upgrade to itest1.1, which contains the following bug fixing & features:
+    * Refactor HTML report and deploy to web server
+    * Support html template using python-bottle
+    * Anto upload html report to web server
+    * Support mic function test
+
+ -- Junchun Guan <junchunx.guan@intel.com>  Thu, 24 Jan 2013 11:45:08 +0800
+
+itest (1.0) unstable; urgency=high
+  * Init release
+    * Support gbs functional test
+    * Generate local report and simple html report
+
+ -- Junchun Guan <junchunx.guan@intel.com>  Tue, 6 Nov 2012 09:54:46 +0800
+
