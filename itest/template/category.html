@@ -1,0 +1,36 @@
+<h1 id="category">Category</h1>
+<table>
+    <tr>
+        <th>Component</th>
+        <th>Passed</th>
+        <th>Failed</th>
+        <th>Sum</th>
+        <th>Issues related</th>
+    </tr>
+
+    %for comp, cnt in status.components.items():
+    <tr>
+        <td><a href="#${comp}">${comp}</a></td>
+        <td>${ cnt['pass'] }</td>
+        <td>${ cnt['failed'] }</td>
+        <td>${ cnt['total'] }</td>
+        <td>
+        %if comp in comp2issues:
+            %for issue in sorted(comp2issues[comp], lambda i,j: cmp(int(j[1]), int(i[1]))):
+                <a href="${issue_link(issue)}">${issue[0]}</a>
+            %endfor
+        %else:
+            &nbsp;
+        %endif
+        </td>
+    </tr>
+    %endfor
+
+    <tr>
+        <th>Sum</th>
+        <td>${ status.total['pass'] }</td>
+        <td>${ status.total['failed'] }</td>
+        <td>${ status.total['total'] }</td>
+        <td>&nbsp;</td>
+    </tr>
+</table>

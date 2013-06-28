@@ -1,0 +1,46 @@
+<html>
+<head>
+<title>
+    <%block name="title">Itest Test Report</%block>
+</title>
+<style>
+.failed { color: red }
+.pass { color: green }
+
+table {
+    border-collapse:collapse;
+    margin-bottom: 1em;
+}
+th { background-color: #F3F3F3 }
+td, th {
+    border: 1px solid grey;
+    padding: 3px
+}
+
+table.right th { text-align: right }
+
+ol.case_list {
+    margin: 0;
+    padding-left: 1.5em;
+}
+<%block name="style" />
+</style>
+</head>
+<body>
+
+<%include file="overview.html" />
+<%block name="after_overview" />
+
+%if settings.ENABLE_COVERAGE:
+<h1>Coverage Report</h1>
+<a href='htmlcov/index.html'>click to open</a>
+%endif
+
+<%include file="category.html" />
+<%include file="details.html" />
+<%include file="issues.html" />
+
+${self.body()}
+
+</body>
+</html>

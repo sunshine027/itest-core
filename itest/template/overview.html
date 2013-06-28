@@ -1,0 +1,35 @@
+<h1 id="overview">Overview</h1>
+
+%if not status.complete:
+<p>Still running, ${ status.start['total_cases'] } cases total,
+    ${status.start['total_cases'] - status.total['total']} remain</p>
+%elif status.done['error']:
+<p>Planed to run ${ status.start['total_cases'] } cases but
+    exit with ${ status.done['error'] }</p>
+%endif
+
+<table class="right">
+    <tr>
+        <th>Passed</th>
+        <td>${ status.total['pass'] } / ${ status.total['total'] }</td>
+    </tr>
+    <tr>
+        <th>Failed</th>
+        <td>${ status.total['failed'] } / ${ status.total['total'] }</td>
+    </tr>
+    <tr>
+        <th>Costed</th>
+        <td>${ status.cost }</td>
+    </tr>
+    <tr>
+        <th>Started</th>
+        <td>${ status.start['start_time'] }</td>
+    </tr>
+    %for key, val in status.env:
+    <tr>
+        <th>${key}</th>
+        <td>${val}</td>
+    </tr>
+    %endfor
+</table>
+
