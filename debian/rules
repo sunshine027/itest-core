@@ -2,7 +2,7 @@
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
-ITEST =$(shell pwd)/debian/itest
+ITEST =$(shell pwd)/debian/itest-core
 build: build-stamp
 build-stamp:
 	dh_testdir

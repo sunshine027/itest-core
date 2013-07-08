@@ -1,4 +1,4 @@
-PKG_NAME := itest
+PKG_NAME := itest-core
 SPECFILE = $(addsuffix .spec, $(PKG_NAME))
 PKG_VERSION := $(shell grep '^Version: ' $(SPECFILE)|awk '{print $$2}')
 
