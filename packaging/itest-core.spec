@@ -13,7 +13,7 @@ Requires:   python >= 2.6
 %if 0%{?suse_version}
 Requires:   python-pexpect
 %else
-Requires:   pexpect < 2.5
+Requires:   pexpect
 %endif
 Requires:   python-mako >= 0.4
 Requires:   python-nose
