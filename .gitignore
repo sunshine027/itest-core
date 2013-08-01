@@ -1,5 +1,7 @@
 distribute-*.egg
 distribute-*.tar.gz
 itest.egg-info/
+build/
+dist/
 packaging/itest-core*.tar.gz
 packaging/.osc/

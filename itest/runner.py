@@ -2,13 +2,13 @@ import sys
 import time
 import datetime
 
-from itest.result import HTMLTestResult
+from itest.result import TextTestResult
 from itest.signals import register_result
 
 
 class TextTestRunner(object):
 
-    result_class = HTMLTestResult
+    result_class = TextTestResult
 
     def __init__(self, verbose):
         self.verbose = verbose

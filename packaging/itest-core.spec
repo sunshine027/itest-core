@@ -15,8 +15,6 @@ Requires:   python-pexpect
 %else
 Requires:   pexpect
 %endif
-Requires:   python-mako >= 0.4
-Requires:   python-nose
 Requires:   python-coverage
 %if "%{?python_version}" < "2.7"
 Requires:   python-argparse
