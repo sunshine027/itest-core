@@ -22,7 +22,8 @@ class TestResult(object):
     # seq number for current running test case
     current_no = 0
 
-    def __init__(self, verbose=0):
+    def __init__(self, space, verbose=0):
+        self.space = space
         self.verbose = verbose
 
     def test_start(self, test):
@@ -122,3 +123,52 @@ class TextTestResult(TestResult):
             print 'case    ', test.filename
             print 'rundir  ', test.rundir
             print 'logname ', test.logname
+
+
+class XunitTestResult(TextTestResult):
+
+    xunit_file = 'itests.xml'
+
+    def print_summary(self):
+        '''Generate Xunit report and print summary
+        '''
+        super(XunitTestResult, self).print_summary()
+        filename = self._make_report()
+        print
+        print 'xunit report generate at', filename
+
+    def _make_report(self):
+        xml = ['<?xml version="1.0" encoding="utf8"?>\n'
+               '<testsuite name="itests" tests="%(total)d" errors="%(errors)d" '
+               'failures="%(failures)d" skip="%(skipped)d">'
+               % {'total': len(self.success) + len(self.failure),
+                  'errors': 0,
+                  'failures': len(self.failure),
+                  'skipped': 0,
+                  }]
+        for test in self.success:
+            xml.append(
+                '<testcase classname="%(cls)s" name="%(name)s" '
+                'time="%(taken).3f" />' %
+                {'cls': test.component,
+                 'name': os.path.basename(test.filename),
+                 'taken': test.cost_time,
+                 })
+        for test in self.failure:
+            xml.append(
+                '<testcase classname="%(cls)s" name="%(name)s" time="%(taken).3f">'
+                '<failure message="%(message)s"><![CDATA[%(log)s]]>'
+                '</failure></testcase>' %
+                {'cls': test.component,
+                 'name': os.path.basename(test.filename),
+                 'taken': test.cost_time,
+                 'message': os.path.basename(test.logname),
+                 'log': open(test.logname).read().replace('\r', '\n'),
+                 })
+        xml.append('</testsuite>')
+        xml = '\n'.join(xml)
+
+        filename = os.path.join(self.space.logdir, self.xunit_file)
+        with open(filename, 'w') as fp:
+            fp.write(xml)
+        return filename

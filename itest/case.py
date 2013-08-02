@@ -5,7 +5,7 @@ import logging
 import traceback
 
 from itest.conf import settings
-from itest.utils import now
+from itest.utils import now, cd
 
 import pexpect
 
@@ -139,8 +139,6 @@ class TestCase(object):
         return relative[0] if len(relative) > 1 else 'unknown'
 
     def _prepare(self, space):
-        self.rundir = space.new_test_dir()
-        os.chdir(self.rundir)
         os.mkdir(self.meta)
 
         self.setup_script =  self._make_setup_script()
@@ -264,9 +262,13 @@ set -x
             return -1
 
     def run(self, result, space, verbose):
-        self._open_log(space, verbose)
-        self._prepare(space)
+        self.rundir = space.new_test_dir()
+        with cd(self.rundir):
+            self._open_log(space, verbose)
+            self._prepare(space)
+            self._run(result, space, verbose)
 
+    def _run(self, result, space, verbose):
         result.test_start(self)
         self._log('INFO: case start to run!')
         try:

@@ -5,6 +5,7 @@ import logging
 import datetime
 import platform
 import subprocess
+from contextlib import contextmanager
 
 
 def proxy_unset():
@@ -78,3 +79,12 @@ def calculate_directory_size(path):
         logging.warn('%s: %s' % (err, ' '.join(cmd)))
         return None
     return output.split()[0]
+
+@contextmanager
+def cd(path):
+    '''cd to given path and get back when it finish
+    '''
+    old_path = os.getcwd()
+    os.chdir(path)
+    yield
+    os.chdir(old_path)

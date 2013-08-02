@@ -2,24 +2,24 @@ import sys
 import time
 import datetime
 
-from itest.result import TextTestResult
+from itest.result import XunitTestResult
 from itest.signals import register_result
 
 
 class TextTestRunner(object):
 
-    result_class = TextTestResult
+    result_class = XunitTestResult
 
     def __init__(self, verbose):
         self.verbose = verbose
 
-    def _make_result(self):
-        return self.result_class(self.verbose)
+    def _make_result(self, space):
+        return self.result_class(space, self.verbose)
 
     def run(self, test, space, env):
         print 'plan to run %d test%s' % (test.count, 's' if test.count > 1 else '')
 
-        result = self._make_result()
+        result = self._make_result(space)
         register_result(result)
 
         start_time = time.time()
