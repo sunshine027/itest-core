@@ -259,8 +259,7 @@ set -x
                          expecting=expecting,
                          timeout=float(settings.RUN_CASE_TIMEOUT),
                          output=self.logfile)
-        except:
-            err = traceback.format_exc()
+        except Exception as err:
             self._log('ERROR: pcall error:%s\n%s' % (script, err))
             return -1
 
