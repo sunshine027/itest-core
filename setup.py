@@ -28,6 +28,6 @@ setup(name='itest',
       license='GPLv2',
       platforms=['Linux'],
       scripts=['scripts/runtest'],
-      packages=['itest', 'itest.conf', 'itest.template'],
+      packages=['itest', 'itest.conf'],
       package_data={'': ['*.html']},
      )

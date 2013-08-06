@@ -2,12 +2,21 @@
 import os
 import sys
 import logging
-import traceback
+
+import pexpect
 
 from itest.conf import settings
 from itest.utils import now, cd
 
-import pexpect
+try:
+    # 2.7
+    from unittest.case import SkipTest
+except ImportError:
+    # 2.6 and below
+    class SkipTest(Exception):
+        """Raise this exception to mark a test as skipped.
+        """
+        pass
 
 
 class TimeoutError(Exception):
@@ -92,6 +101,7 @@ class TestCase(object):
 
     meta = '.meta'
     count = 1
+    was_skipped = False
     was_successful = False
 
     def __init__(self, fname, summary, steps,
@@ -138,7 +148,9 @@ class TestCase(object):
         # >1 means [0] is an dir name
         return relative[0] if len(relative) > 1 else 'unknown'
 
-    def _prepare(self, space):
+    def _make_scripts(self, space):
+        '''Make shell script of setup, teardown, steps
+        '''
         os.mkdir(self.meta)
 
         self.setup_script =  self._make_setup_script()
@@ -262,31 +274,25 @@ set -x
             return -1
 
     def run(self, result, space, verbose):
-        self.rundir = space.new_test_dir()
-        with cd(self.rundir):
-            self._open_log(space, verbose)
-            self._prepare(space)
-            self._run(result, space, verbose)
-
-    def _run(self, result, space, verbose):
         result.test_start(self)
-        self._log('INFO: case start to run!')
         try:
-            try:
+            # FIXME: make this self.rundir as local var
+            self.rundir = space.new_test_dir()
+            with cd(self.rundir):
+                self._open_log(space, verbose)
+                self._make_scripts(space)
+                self._log('INFO: case start to run!')
                 self._setup()
-
                 try:
                     exit_status = self._steps()
-                finally: # make sure to call tearDown if setUp success
+                finally:
+                    # make sure to call tearDown if setUp success
                     self._teardown()
                     self._log('INFO: case is finished!')
-            finally:
-                # make sure to call test_stop if test_start is called
-
-                # test_stop must be called before add_failue/success/exception,
-                # since test_start/stop will calculate cost time of this case
-                # which will be used in those add_* functions.
-                result.test_stop(self)
+        except SkipTest as err:
+            # FIXME: reimplement this retry feature
+            self.retry = 0
+            result.add_skipped(self, err)
         except KeyboardInterrupt:
             # mark case as failure if it is broke by ^C
             result.add_failure(self)
@@ -294,16 +300,20 @@ set -x
         except:
             # catch all exceptions and log it, no need to throw it out
             result.add_exception(self, sys.exc_info())
+            # FIXME: add_error not add_exception
         else:
             if exit_status == 0:
-                result.add_success(self)
                 self.retry = 0
+                result.add_success(self)
             else:
                 if self.retry <= 0:
                     result.add_failure(self)
         finally:
-            self.logfile.close()
-            self.delete_color_code_in_log_file(self.logname)
+            # make sure to call test_stop if test_start is called
+            result.test_stop(self)
+            if self.logfile:
+                self.logfile.close()
+                self.delete_color_code_in_log_file(self.logname)
 
     def _open_log(self, space, verbose):
         self.logname = space.new_log_name(self)

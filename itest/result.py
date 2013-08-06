@@ -9,6 +9,7 @@ class TestResult(object):
 
     success = []
     failure = []
+    skipped = []
 
     # should stop after current case finish
     should_stop = False
@@ -65,6 +66,13 @@ class TestResult(object):
         test.was_successful = False
         self.failure.append(test)
 
+    def add_skipped(self, test, reason):
+        '''Add a test case which had been skipped
+        '''
+        test.was_skipped = True
+        test.skip_reason = reason
+        self.skipped.append(test)
+
     @property
     def was_successful(self):
         return len(self.failure) == 0
@@ -78,36 +86,41 @@ class TestResult(object):
 class TextTestResult(TestResult):
 
     def test_start(self, test):
-        '''test case start'''
+        '''test case start
+        '''
         super(TextTestResult, self).test_start(test)
         if self.verbose:
             print '%d. %s ...' % (self.current_no,
                                   os.path.basename(test.filename)),
             sys.stdout.flush()
 
-    def add_success(self, test):
-        super(TextTestResult, self).add_success(test)
-        if self.verbose:
-            cost = datetime.timedelta(seconds=int(test.cost_time))
-            from_beginning = datetime.timedelta(seconds=int(test.cost_time_from_beginning))
-            print '(%s/%s) ok' % (cost, from_beginning)
-        else:
-            sys.stdout.write('.')
-        sys.stdout.flush()
+    def test_stop(self, test):
+        '''When test stop
+        '''
+        super(TextTestResult, self).test_stop(test)
 
-    def add_failure(self, test):
-        super(TextTestResult, self).add_failure(test)
         if self.verbose:
             cost = datetime.timedelta(seconds=int(test.cost_time))
             from_beginning = datetime.timedelta(seconds=int(test.cost_time_from_beginning))
-            print
-            print '-' * 40
-            print '[FAILED]', os.path.basename(test.filename), '(%s/%s)' % (cost, from_beginning)
-            print 'case    ', test.filename
-            print 'rundir  ', test.rundir
-            print 'logname ', test.logname
+
+            if test.was_skipped:
+                print 'skipped', test.skip_reason
+            elif test.was_successful:
+                print '(%s/%s) ok' % (cost, from_beginning)
+            else:
+                print
+                print '-' * 40
+                print '[FAILED]', os.path.basename(test.filename), '(%s/%s)' % (cost, from_beginning)
+                print 'case    ', test.filename
+                print 'rundir  ', test.rundir
+                print 'logname ', test.logname
         else:
-            sys.stdout.write('F')
+            if test.was_skipped:
+                sys.stdout.write('s')
+            elif test.was_successful:
+                sys.stdout.write('.')
+            else:
+                sys.stdout.write('F')
         sys.stdout.flush()
 
     def print_summary(self):
@@ -138,13 +151,16 @@ class XunitTestResult(TextTestResult):
         print 'xunit report generate at', filename
 
     def _make_report(self):
+        '''Make the xunit format of xml located in testspace.
+        XML file name is returned.
+        '''
         xml = ['<?xml version="1.0" encoding="utf8"?>\n'
                '<testsuite name="itests" tests="%(total)d" errors="%(errors)d" '
                'failures="%(failures)d" skip="%(skipped)d">'
-               % {'total': len(self.success) + len(self.failure),
+               % {'total': len(self.success) + len(self.failure) + len(self.skipped),
                   'errors': 0,
                   'failures': len(self.failure),
-                  'skipped': 0,
+                  'skipped': len(self.skipped),
                   }]
         for test in self.success:
             xml.append(
