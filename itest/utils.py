@@ -37,6 +37,21 @@ def get_dist():
 def get_arch():
     return platform.architecture()[0]
 
+def get_machine_labels():
+    '''Get machine labels for localhost. The label are strings in format of
+    <dist_name><dist_version>-<arch>. Such as "Fedora", "Fedora17",
+    "Fedora17-x86_64", "Ubuntu", "Ubuntu12.04", "Ubuntun12.10-i586".
+    '''
+    dist_name, dist_ver, _ = platform.linux_distribution()
+    arch = platform.machine()
+    return (dist_name,
+            arch,
+            '%s%s' % (dist_name, dist_ver),
+            '%s-%s' % (dist_name, arch),
+            '%s%s-%s' % (dist_name, dist_ver, arch),
+            )
+
+
 def query_pkg_info(pkg):
     dist = platform.dist()[0].lower()
     if dist == 'ubuntu':

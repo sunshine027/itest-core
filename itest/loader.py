@@ -139,6 +139,32 @@ class CaseParser(BaseParser):
             raise SyntaxError('Unrecognized issue number:%s' % text)
         return nums
 
+    def clean_conditions(self, text):
+        '''Section __conditions__
+        It declares precondition of this case should run, such as certain linux
+        distributions or architecture. It's an optional section, if it omits,
+        case will always run.
+
+        For example:
+
+        __conditions__
+        DistWhitelist: Fedora, Ubuntu12.04-x86_64
+        DistBlacklist: CentOS, OpenSUSE12.1
+
+        Condition match when test machine is in whitelist(if exists) and
+        NOT in the blacklist. All words are case-insensitive.
+        '''
+        cond = {}
+        for line in text.split('\n'):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            key, val = line.split(':', 1)
+            key = key.strip().lower()
+            val = val.replace(',', ' ').split()
+            cond[key] = set((i.strip().lower() for i in val))
+        return cond
+
 
 class TestLoader(object):
 

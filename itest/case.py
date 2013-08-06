@@ -6,7 +6,7 @@ import logging
 import pexpect
 
 from itest.conf import settings
-from itest.utils import now, cd
+from itest.utils import now, cd, get_machine_labels
 
 try:
     # 2.7
@@ -108,6 +108,7 @@ class TestCase(object):
                  setup='', teardown='',
                  qa=(), issue=None,
                  precondition='', tag='', version='',
+                 conditions=None,
                  ):
         self.filename = fname
         self.summary = summary
@@ -118,6 +119,7 @@ class TestCase(object):
 
         self.qa = qa
         self.issue = issue if issue else {}
+        self.conditions = conditions or {}
 
         self.component = self.guess_component(self.filename)
         #TODO: need a more reasonable and meaningful id rather than this
@@ -276,6 +278,7 @@ set -x
     def run(self, result, space, verbose):
         result.test_start(self)
         try:
+            self._check_conditions()
             # FIXME: make this self.rundir as local var
             self.rundir = space.new_test_dir()
             with cd(self.rundir):
@@ -333,3 +336,23 @@ set -x
         with open(path, 'w') as f:
             f.write(code)
         return path
+
+    def _check_conditions(self):
+        '''Check if conditions match, raise SkipTest if some conditions are
+        defined but not match.
+        '''
+        labels = set((i.lower() for i in get_machine_labels()))
+
+        # blacklist has higher priority, if it match both black and white
+        # lists, it will be skipped
+        intersection = labels & self.conditions.get('distblacklist', set())
+        if intersection:
+            raise SkipTest('by distribution blacklist:%s' %
+                           ','.join(intersection))
+
+        kw = 'distwhitelist'
+        if kw in self.conditions:
+            intersection = labels & self.conditions[kw]
+            if not intersection:
+                raise SkipTest('not in distribution whitelist:%s' %
+                               ','.join(self.conditions[kw]))
