@@ -42,8 +42,9 @@ def get_machine_labels():
     <dist_name><dist_version>-<arch>. Such as "Fedora", "Fedora17",
     "Fedora17-x86_64", "Ubuntu", "Ubuntu12.04", "Ubuntun12.10-i586".
     '''
-    dist_name, dist_ver, _ = platform.linux_distribution()
-    arch = platform.machine()
+    dist_name, dist_ver = \
+        [ i.strip() for i in platform.linux_distribution()[:2] ]
+    arch = platform.machine().strip()
     return (dist_name,
             arch,
             '%s%s' % (dist_name, dist_ver),
