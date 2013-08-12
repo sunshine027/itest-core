@@ -8,11 +8,6 @@ import subprocess
 from contextlib import contextmanager
 
 
-def proxy_unset():
-    os.unsetenv('http_proxy')
-    os.unsetenv('https_proxy')
-    os.unsetenv('no_proxy')
-
 def get_local_ipv4():
     inet_addr = re.compile(r'(inet\s+|inet addr:)([\d\.]+)')
     output = check_output('/sbin/ifconfig')
