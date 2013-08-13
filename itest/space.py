@@ -1,7 +1,10 @@
 import os
 import uuid
+import fcntl
+import errno
 import shutil
 import logging
+import tempfile
 
 from itest.case import sudo
 from itest.utils import calculate_directory_size
@@ -9,20 +12,18 @@ from itest.utils import calculate_directory_size
 
 class TestSpace(object):
 
-    _locked = False
-
     def __init__(self, workdir):
         self.workdir = workdir
-        self.lockname = os.path.join(workdir, 'LOCK')
+        self.lockname = os.path.join(tempfile.gettempdir(), 'itest.lock')
+        self.lockfp = None
         self.logdir = os.path.join(workdir, 'logs')
         self.rundir = os.path.join(workdir, 'running')
         self.fixdir = os.path.join(workdir, 'fixtures')
 
     def setup(self, suite, env):
         if not self._acquire_lock():
-            msg = "another instance is working on this workspace(%s) " \
-                "since the lock file(%s) exist. please run ps to " \
-                "check." % (self.workdir, self.lockname)
+            msg = "Another instance is working on this workspace(%s). " \
+                "Please run ps to check." % self.workdir
             logging.error(msg)
             return False
 
@@ -63,33 +64,28 @@ class TestSpace(object):
         shutil.copytree(env.fixtures_dir, self.fixdir)
 
     def _acquire_lock(self):
-        if os.path.exists(self.lockname):
+        fp = open(self.lockname, 'wb')
+        try:
+            fcntl.lockf(fp.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except IOError as err:
+            if err.errno not in (errno.EACCES, errno.EAGAIN):
+                raise
             return False
+        else:
+            self.lockfp = fp
 
-        # race condition here, but i simply ignore this
-        path = self.workdir
-        if os.path.exists(path):
-            msg = 'removing old test space %s' % path
+        if os.path.exists(self.workdir):
+            msg = 'removing old test space %s' % self.workdir
             logging.info(msg)
-            if sudo('rm -rf %s' % path) != 0:
+            if sudo('rm -rf %s' % self.workdir) != 0:
                 raise Exception("can't clean old workspace, please fix manually")
+        os.mkdir(self.workdir)
 
-        os.mkdir(path)
-        open(self.lockname, 'w').close()
-        self._locked = True
         return True
 
     def _release_lock(self):
-        try:
-            os.unlink(self.lockname)
-        except OSError, err:
-            if err.errno == 2: # No such file or directory
-                msg = "lock file(%s) should be there, " \
-                    "but it doesn't exist" % self.lockname
-                logging.warning(msg)
-            else:
-                raise
-
+        if self.lockfp is not None:
+            self.lockfp.close()
+            
     def __del__(self):
-        if self._locked:
-            self._release_lock()
+        self._release_lock()
