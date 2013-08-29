@@ -29,12 +29,7 @@ class TestSuite(object):
         for test in self:
             if result.should_stop:
                 break
-            while True:
-                test.run(result, *args, **kw)
-                if test.retry == 0:
-                    break
-                print "Case failed. Let's try it again"
-                test.retry -= 1
+            test.run(result, *args, **kw)
         return result
 
     def _sorted(self, tests):

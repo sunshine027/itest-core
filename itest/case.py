@@ -128,7 +128,6 @@ class TestCase(object):
         self.logname = None
         self.logfile = None
         self.rundir = None
-        self.retry = 1
 
         self.steps_script = None
         self.setup_script = None
@@ -293,8 +292,6 @@ set -x
                     self._teardown()
                     self._log('INFO: case is finished!')
         except SkipTest as err:
-            # FIXME: reimplement this retry feature
-            self.retry = 0
             result.add_skipped(self, err)
         except KeyboardInterrupt:
             # mark case as failure if it is broke by ^C
@@ -306,11 +303,9 @@ set -x
             # FIXME: add_error not add_exception
         else:
             if exit_status == 0:
-                self.retry = 0
                 result.add_success(self)
             else:
-                if self.retry <= 0:
-                    result.add_failure(self)
+                result.add_failure(self)
         finally:
             # make sure to call test_stop if test_start is called
             result.test_stop(self)
