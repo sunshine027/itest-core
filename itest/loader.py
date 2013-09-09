@@ -281,9 +281,11 @@ class InversePattern(object):
     def load(self, sel, env):
         if sel.startswith('!'):
             comp = sel[1:]
+            comps = ComponentPattern.guess_components(env)
             if ComponentPattern.is_component(comp, env):
-                comps = ComponentPattern.guess_components(env)
                 return [c for c in comps if c != comp]
+            # if the keyword isn't a component name, then it is useless
+            return list(comps)
 
 
 class IntersectionPattern(object):
