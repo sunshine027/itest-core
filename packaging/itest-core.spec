@@ -19,6 +19,8 @@ Requires:   python-coverage
 %if "%{?python_version}" < "2.7"
 Requires:   python-argparse
 %endif
+Requires:   python-urlgrabber
+
 
 BuildRequires: python-setuptools
 BuildRequires:  python-devel
