@@ -1,10 +1,12 @@
 import os
 import sys
+import time
 import glob
 import shutil
 import argparse
 import traceback
 from datetime import datetime
+from contextlib import contextmanager
 
 from itest.case import pcall, SUDO_PASS_PROMPT_PATTERN
 
@@ -13,30 +15,14 @@ SUDO_PASSWD = os.environ.get('ITEST_SUDO_PASSWD', '123456')
 RUN_MIC_TIMEOUT = 60*60*2
 
 
-def main(opts):
-    i = 0
-    while 1:
-        files = glob.glob(os.path.join(PENDING_DIR, '*.ks'))
-        if not files: # empty queue
-            break
-        ks = os.path.basename(files[0])
-
-        move_ks(ks, PENDING_DIR, RUNNING_DIR)
-        print 'start to run:', ks
-        result = run_mic(ks, opts.verbose)
-        i += 1
-
-        if result.is_successful():
-            print 'ok:', ks
-            move_ks(ks, RUNNING_DIR, OK_DIR)
-        elif result.need_run_again():
-            print 'plan to run again:', ks
-            move_ks(ks, RUNNING_DIR, PENDING_DIR)
-        else:
-            print 'failed:', ks
-            move_ks(ks, RUNNING_DIR, FAILED_DIR)
-
-    print 'DONE:', i, 'jobs'
+@contextmanager
+def cd(path):
+    '''context manager switch to given path
+    '''
+    old = os.getcwd()
+    os.chdir(path)
+    yield
+    os.chdir(old)
 
 
 def make_tmp_dir(ks):
@@ -49,10 +35,15 @@ def make_tmp_dir(ks):
 def run_mic(ks, verbose=False):
     # make a temp dir to run mic in it
     tmp_dir = make_tmp_dir(ks)
-
     shutil.copy2(os.path.join(RUNNING_DIR, ks), tmp_dir)
-    os.chdir(tmp_dir)
 
+    start = time.time()
+    with cd(tmp_dir):
+        result = _run_mic(ks, verbose)
+    result.cost = time.time() - start
+    return result
+
+def _run_mic(ks, verbose):
     mic_log = '%s.log' % ks
 
     expecting = [(SUDO_PASS_PROMPT_PATTERN, SUDO_PASSWD)]
@@ -81,7 +72,10 @@ def run_mic(ks, verbose=False):
         if not verbose:
             output.close()
 
-    return Result(ks, tmp_dir, status, log)
+    return Result(ks,
+                  os.getcwd(),
+                  status,
+                  os.path.abspath(log))
 
 
 def move_ks(base, from_, to):
@@ -91,11 +85,12 @@ def move_ks(base, from_, to):
 
 class Result(object):
 
-    def __init__(self, ks, tmpdir, status, log):
+    def __init__(self, ks, tmpdir, status, log, cost=None):
         self.ks = ks
         self.tmpdir = tmpdir
         self.status = status
         self.log = log
+        self.cost = cost
 
     def is_successful(self):
         return self.status == 0 and self._does_image_exist()
@@ -144,11 +139,111 @@ class Result(object):
         #return content.find('XXXXXX') >= 0
 
 
+def read_meta(filename):
+    '''Read meta about KS from file
+    '''
+    meta = {}
+    domain_2_infrastrue = {
+        'download.tizen.org': 'Tizen.org',
+        'download.tizendev.org': 'TizenDev.org',
+        }
+    def get_classname(url):
+        #FIXME: release/ and snapshot/ have different structure
+        domain, snapshot, project, vertical, buildid = url.split('/')[:5]
+        infrastructure = domain_2_infrastrue.get(domain, domain)
+        return '%s.%s %s' % (infrastructure, vertical, buildid)
+
+    with open(filename) as file:
+        for line in file:
+            to, from_ = line.rstrip().split('|')
+            meta[to] = {
+                'name': os.path.basename(from_),
+                'classname': get_classname(from_),
+                }
+    return meta
+
+
+def generate_xunit_report(success, failure):
+    '''Generate a report in xUnit format which treat each
+    ks file as a test case
+    '''
+    xml = ['<?xml version="1.0" encoding="utf8"?>\n'
+           '<testsuite name="ksctrl" tests="%(total)d" errors="%(errors)d" '
+           'failures="%(failures)d" skip="%(skipped)d">'
+           % {'total': len(success) + len(failure),
+              'errors': 0,
+              'failures': len(failure),
+              'skipped': 0,
+              }]
+
+    for test in success:
+        xml.append(
+            '<testcase classname="%(classname)s" name="%(name)s" '
+            'time="%(time).3f" />'
+            % test)
+
+    for test in failure:
+        xml.append(
+            '<testcase classname="%(classname)s" name="%(name)s" time="%(time).3f">'
+            '<failure message="%(message)s"><![CDATA[%(log)s]]>'
+            '</failure></testcase>'
+            % test)
+
+    xml.append('</testsuite>')
+    xml = '\n'.join(xml)
+
+    xml_filename = 'report.xml'
+    with open(xml_filename, 'w') as file:
+        file.write(xml)
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='show more info when run mic')
     return parser.parse_args()
+
+
+def main(opts):
+    i = 0
+    success = []
+    failure = []
+    while 1:
+        files = glob.glob(os.path.join(PENDING_DIR, '*.ks'))
+        if not files: # empty queue
+            break
+        ks = os.path.basename(files[0])
+
+        move_ks(ks, PENDING_DIR, RUNNING_DIR)
+        print 'start to run:', ks
+        result = run_mic(ks, opts.verbose)
+        i += 1
+
+        meta = read_meta(META_FILE)
+        if result.is_successful():
+            print 'ok:', ks
+            move_ks(ks, RUNNING_DIR, OK_DIR)
+            success.append({
+                    'classname': meta[result.ks]['classname'],
+                    'name': meta[result.ks]['name'],
+                    'time': result.cost,
+                    })
+        elif result.need_run_again():
+            print 'plan to run again:', ks
+            move_ks(ks, RUNNING_DIR, PENDING_DIR)
+        else:
+            print 'failed:', ks
+            move_ks(ks, RUNNING_DIR, FAILED_DIR)
+            failure.append({
+                    'classname': meta[result.ks]['classname'],
+                    'name': meta[result.ks]['name'],
+                    'time': result.cost,
+                    'message': 'see log in %s' % os.path.basename(result.log),
+                    'log': open(result.log).read(),
+                    })
+
+    print 'DONE:', i, 'jobs'
+    generate_xunit_report(success, failure)
 
 
 if __name__ == '__main__':
@@ -166,5 +261,6 @@ if __name__ == '__main__':
     OK_DIR      = os.path.join(queue, 'ok')
     FAILED_DIR  = os.path.join(queue, 'failed')
     TMP_DIR     = os.path.join(pwd, 'tmp')
+    META_FILE   = os.path.join(queue, 'meta')
 
     main(opts)
