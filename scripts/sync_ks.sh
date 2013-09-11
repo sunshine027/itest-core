@@ -10,13 +10,16 @@ RUNNING=$QUEUE/running
 
 
 push_to_pending() {
-    cd $MIRROR
+    pushd $MIRROR
 
     cat index | awk '{print $2}' | while read FROM; do
         TO=$(echo $FROM | sed 's!/!_!g')
         cp -v $FROM $PENDING/$TO
+        echo "$TO|$FROM" >> $QUEUE/meta
     done
     echo "$(wc -l index | awk '{print $1}') ks files were copied"
+
+    popd
 }
 
 check_exist_files_in_queue() {

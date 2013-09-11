@@ -23,13 +23,9 @@ run() {
 
 status() {
     echo "queue length"
-    for queue in $(ls queue); do
-        printf "%8s: %d\n" $queue $(ls queue/$queue|wc -l 2>/dev/null)
+    for q in $(find queue -maxdepth 1 -mindepth 1 -type d); do
+        printf "%8s: %d\n" $(basename $q) $(ls $q|wc -l 2>/dev/null)
     done
-}
-
-report() {
-    echo "report" "$@"
 }
 
 usage() {
@@ -43,16 +39,19 @@ usage() {
     echo "    download ks from remote repo and push into queue"
     echo "  run"
     echo "    for each ks in queue to run mic"
-    echo "  report"
-    echo "    make a report for previous steps"
     echo "  status"
     echo "    display status for all queues"
     echo "  go"
-    echo "    shortcut for sync && run && report"
+    echo "    shortcut for sync && run"
 }
 
 
 #### Main
+if [ $# -lt 1 ]; then
+    usage
+    exit 0
+fi
+
 action=$1
 shift
 
@@ -70,16 +69,13 @@ case $action in
     run)
         run "$@"
         ;;
-    report)
-        report "$@"
-        ;;
     status)
         status "$@"
         ;;
     go)
-        sync && run && report
+        sync && run
         ;;
-    -h|--help|"")
+    -h|--help)
         usage
         exit 0
         ;;
