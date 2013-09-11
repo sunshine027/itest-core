@@ -1,0 +1,67 @@
+#!/bin/bash
+PYTHON=python
+
+
+init() {
+    # make queue directories
+    mkdir -vp queue
+    pushd queue >/dev/null
+    mkdir -vp pending running ok failed tmp canceled
+    popd >/dev/null
+
+    echo "init ok"
+}
+
+sync() {
+    $(dirname $0)/sync_ks.sh "$@"
+}
+
+run() {
+    $PYTHON $(dirname $0)/run_ks.py "$@"
+}
+
+report() {
+    echo "report" "$@"
+}
+
+usage() {
+    echo "Control script to download ks and run mic automatically"
+    echo "Usage: $0 [ACTION|-h|--help]"
+    echo "Available ACTION are:"
+    echo "    init    make an env for following steps"
+    echo "    sync    download ks from remote repo and push into queue"
+    echo "    run     for each ks in queue to run mic"
+    echo "    report  make a report for previous steps"
+    echo "    go      shortcut for sync && run && report"
+}
+
+
+#### Main
+action=$1
+shift
+
+case $action in
+    init)
+        init
+        ;;
+    sync)
+        sync "$@"
+        ;;
+    run)
+        run "$@"
+        ;;
+    report)
+        report "$@"
+        ;;
+    go)
+        sync && run && report
+        ;;
+    -h|--help|"")
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Invalid action: $action"
+        exit 1
+        ;;
+esac

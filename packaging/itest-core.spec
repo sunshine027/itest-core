@@ -40,3 +40,5 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{python_sitelib}/*
 %{_bindir}/runtest
+%{_bindir}/ksctrl
+%{_bindir}/sync_ks.sh
