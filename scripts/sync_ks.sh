@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 WORKDIR=$(pwd)
 
@@ -20,7 +20,7 @@ push_to_pending() {
 }
 
 check_exist_files_in_queue() {
-    files=$(find $PENDING $RUNING -type f)
+    files=$(find $PENDING $RUNNING -type f)
     if [ -n "$files" ]; then
         echo "There are some files in queue:"
         echo $files | xargs -n1

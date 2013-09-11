@@ -166,13 +166,9 @@ def install_service(serv):
 install_service(URLDirectoryService())
 
 
-DOMAINS = (
-    URL('http://download.tizen.org/snapshots/2.0/'),
-    URL('https://download.tizendev.org/snapshots/tizen-2.1/'),
-    )
-
-MORE_DISTROS = (
-    URL('https://download.tz.otcshare.org/snapshots/trunk/pc/'),
+IMAGES_URLS = (
+    URL('http://download.tizen.org/snapshots/tizen/ivi/latest/images/'),
+    URL('http://download.tizen.org/snapshots/tizen/mobile/latest/images/'),
     )
 
 
@@ -181,115 +177,24 @@ def clean():
         shutil.rmtree(MIRROR_PATH)
 
 
-def main():
-    clean()
-    for domain in DOMAINS:
-        logger.info('deal with doamin(%s)' % domain)
-        try:
-            deal_with_domain(domain)
-        except Exception:
-            traceback.print_exc()
-            logger.error("Skip to next domain")
+def mirror_images_url(url):
+    '''Mirror all images start from this url
+    For exmaple:
+    http://download.tizen.org/snapshots/tizen/ivi/latest/images/
+    http://download.tizen.org/snapshots/tizen/ivi/tizen_20130910.9/images/
+    http://download.tizen.org/snapshots/tizen/mobile/latest/images/
 
-    for dist in MORE_DISTROS:
-        logger.info('deal with dist(%s)' % dist)
-        try:
-            deal_with_dist(dist)
-        except Exception:
-            traceback.print_exc()
-            logger.error("Skip to next dist")
-
-
-def deal_with_domain(domain):
-    for dist in listdir(domain):
-        dist = join(domain, dist)
-        logger.info('deal with dist(%s)' % dist)
-
-        try:
-            deal_with_dist(dist)
-        except Exception:
-            traceback.print_exc()
-            logger.error("Skip to next dist")
-
-
-class BuildIDFallbackStrategy(object):
-
-    BUILDID_PATTERN = re.compile(r'_(\d{8}).(\d+)$')
-    FALLBACK_DAYS = 7
-    FALLBACK_NUMBERS = 3
-
-    def __init__(self, build_ids):
-        self.build_ids = build_ids
-
-    def __iter__(self):
-        count = defaultdict(int)
-        ids = self._sort_by_date_and_number(self.build_ids)
-
-        for date, number, bid in ids:
-            count[date] += 1
-
-            if len(count) > self.FALLBACK_DAYS:
-                break
-
-            if count[date] > self.FALLBACK_NUMBERS:
-                continue
-
-            yield bid
-
-    def _sort_by_date_and_number(self, build_ids):
-        ids = []
-        for bid in build_ids:
-            m = self.BUILDID_PATTERN.search(bid)
-            if m:
-                date, number = int(m.group(1)), int(m.group(2))
-                ids.append((date, number, bid))
-
-        ids.sort(reverse=1)
-        return ids
-
-
-def deal_with_dist(dist):
-    '''distro argument is a distribution URL which contains many repos like
-    "latest", "tizen-2.0_20130401.11", etc.
-
-    It will search repos in desc order by time, return image device names.
+    It will search and download all KS files recursively
     '''
-
     mirror = Mirror(MIRROR_PATH)
 
-    def deal_with_device(repo, device):
-        path = join(dist, repo, 'images', device)
-        files = listdir(path)
-        ks = '%s.ks' % device
-
-        if len(files) <= 2 or ks not in files:
-            return False
-
-        # len(..) > 2 means there are more files besides ks and log
-        # files in which situation, image may exist.
-        ks = join(path, ks)
-        logger.info('found ks(%s)' % ks)
-        mirror.download(ks)
-        return True
-
-    repos = BuildIDFallbackStrategy(listdir(dist))
-    path = join(dist, 'latest', 'images')
-
-    for device in listdir(path):
-        found = False
-        for repo in repos:
-            try:
-                if deal_with_device(repo, device):
-                    found = True
-                    break
-            except Exception:
-                traceback.print_exc()
-                logger.error("Skip to next device")
-                break
-            logger.warn('bad repo(%s), skip to previous' % repo)
-
-        if not found:
-            logger.error('Failed to find any avaiable ks for device(%s)' % device)
+    for profile in listdir(url):
+        path = join(url, profile)
+        for filename in listdir(path):
+            if filename.endswith('.ks'):
+                ks = join(path, filename)
+                mirror.download(ks)
+                logger.info('found ks(%s)' % filename)
 
 
 class Mirror(object):
@@ -356,6 +261,12 @@ class Mirror(object):
                         line = _replace(line)
                     to.write(line)
 
+
+def main():
+    clean()
+    for url in IMAGES_URLS:
+        logger.info('mirror %s' % url)
+        mirror_images_url(url)
 
 
 if __name__ == '__main__':

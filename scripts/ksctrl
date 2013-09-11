@@ -1,14 +1,15 @@
-#!/bin/bash
+#!/bin/bash -eu
 PYTHON=python
-
+QUEUES="pending running ok failed canceled"
 
 init() {
     # make queue directories
-    mkdir -vp queue
-    pushd queue >/dev/null
-    mkdir -vp pending running ok failed tmp canceled
-    popd >/dev/null
-
+    env=$1
+    mkdir -vp $env/queue
+    for path in $QUEUES; do
+        mkdir -v $env/queue/$path
+    done
+    mkdir -vp $env/tmp
     echo "init ok"
 }
 
@@ -20,19 +21,34 @@ run() {
     $PYTHON $(dirname $0)/run_ks.py "$@"
 }
 
+status() {
+    echo "queue length"
+    for queue in $(ls queue); do
+        printf "%8s: %d\n" $queue $(ls queue/$queue|wc -l 2>/dev/null)
+    done
+}
+
 report() {
     echo "report" "$@"
 }
 
 usage() {
     echo "Control script to download ks and run mic automatically"
-    echo "Usage: $0 [ACTION|-h|--help]"
-    echo "Available ACTION are:"
-    echo "    init    make an env for following steps"
-    echo "    sync    download ks from remote repo and push into queue"
-    echo "    run     for each ks in queue to run mic"
-    echo "    report  make a report for previous steps"
-    echo "    go      shortcut for sync && run && report"
+    echo "Usage: $0 [-h|--help] ACTION [options]"
+    echo
+    echo "Available ACTIONs:"
+    echo "  init <env>"
+    echo "    echo make an env for following steps"
+    echo "  sync"
+    echo "    download ks from remote repo and push into queue"
+    echo "  run"
+    echo "    for each ks in queue to run mic"
+    echo "  report"
+    echo "    make a report for previous steps"
+    echo "  status"
+    echo "    display status for all queues"
+    echo "  go"
+    echo "    shortcut for sync && run && report"
 }
 
 
@@ -42,7 +58,11 @@ shift
 
 case $action in
     init)
-        init
+        if [ $# -lt 1 ]; then
+            echo "env parameter is required"
+            exit 1
+        fi
+        init "$1"
         ;;
     sync)
         sync "$@"
@@ -52,6 +72,9 @@ case $action in
         ;;
     report)
         report "$@"
+        ;;
+    status)
+        status "$@"
         ;;
     go)
         sync && run && report

@@ -42,3 +42,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/runtest
 %{_bindir}/ksctrl
 %{_bindir}/sync_ks.sh
+%{_bindir}/grab_ks.py
+%{_bindir}/run_ks.py

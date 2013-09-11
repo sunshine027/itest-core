@@ -165,6 +165,6 @@ if __name__ == '__main__':
     RUNNING_DIR = os.path.join(queue, 'running')
     OK_DIR      = os.path.join(queue, 'ok')
     FAILED_DIR  = os.path.join(queue, 'failed')
-    TMP_DIR     = os.path.join(queue, 'tmp')
+    TMP_DIR     = os.path.join(pwd, 'tmp')
 
     main(opts)
