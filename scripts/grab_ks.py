@@ -1,5 +1,6 @@
 import re
 import os
+import sys
 import string
 import shutil
 import urllib
@@ -16,7 +17,7 @@ MIRROR_PATH = 'mirror'
 SOCKET_TIMEOUT = 60 * 10
 
 
-logging.basicConfig(filename='/dev/fd/1', level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging
 
 
