@@ -19,8 +19,6 @@ Requires:   python-coverage
 %if "%{?python_version}" < "2.7"
 Requires:   python-argparse
 %endif
-Requires:   python-urlgrabber
-
 
 BuildRequires: python-setuptools
 BuildRequires:  python-devel
@@ -42,7 +40,3 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{python_sitelib}/*
 %{_bindir}/runtest
-%{_bindir}/ksctrl
-%{_bindir}/sync_ks.sh
-%{_bindir}/grab_ks.py
-%{_bindir}/run_ks.py
