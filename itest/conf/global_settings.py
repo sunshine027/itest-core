@@ -51,6 +51,9 @@ COVERAGE_RCFILE = 'coveragerc'
 # Timeout(in seconds) for running a single case
 RUN_CASE_TIMEOUT = 30 * 60 # half an hour
 
+# Timeout(in seconds) for no output
+HANGING_TIMEOUT = 5 * 60 # 5 minutes
+
 # Time zone
 TZ = None
 
