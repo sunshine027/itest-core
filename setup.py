@@ -1,10 +1,8 @@
 #!/usr/bin/env python
+"Setup"
 #from distribute_setup import use_setuptools
 #use_setuptools()
-
 from setuptools import setup
-
-import sys
 
 from itest import __version__
 
@@ -17,8 +15,10 @@ setup(name='itest',
       'dawei.yang@intel.com, hao.h.huang@intel.com, junchunx.guan@intel.com',
       license='GPLv2',
       platforms=['Linux'],
-      packages=['itest', 'itest.conf'],
+      packages=['itest', 'itest.conf', 'imgdiff'],
       package_data={'': ['*.html']},
-      scripts=['scripts/runtest',
-               ],
+      scripts=[
+            'scripts/runtest',
+            'scripts/imgdiff',
+          ],
      )

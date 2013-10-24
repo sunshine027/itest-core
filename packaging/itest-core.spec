@@ -9,19 +9,20 @@ License:    GPLv2
 BuildArch:  noarch
 URL:        http://www.tizen.org
 Source0:    %{name}_%{version}.tar.gz
+
 Requires:   python >= 2.6
 %if 0%{?suse_version}
 Requires:   python-pexpect
 %else
 Requires:   pexpect
 %endif
-Requires:   python-coverage
+
 %if "%{?python_version}" < "2.7"
 Requires:   python-argparse
 %endif
 
 BuildRequires: python-setuptools
-BuildRequires:  python-devel
+BuildRequires: python-devel
 
 %description
 gbs system test
@@ -29,14 +30,11 @@ gbs system test
 %prep
 %setup -q -n %{name}-%{version}
 
-%build
-CFLAGS="$RPM_OPT_FLAGS" %{__python} setup.py build
-
 %install
-rm -rf $RPM_BUILD_ROOT
-%{__python} setup.py install --root=$RPM_BUILD_ROOT --prefix=%{_prefix}
+%{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot}
 
 %files
 %defattr(-,root,root,-)
 %{python_sitelib}/*
 %{_bindir}/runtest
+%{_bindir}/imgdiff

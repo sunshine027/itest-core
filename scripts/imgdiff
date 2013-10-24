@@ -1,0 +1,103 @@
+#!/bin/bash
+pdir=$(dirname $0)
+CLEANUP_PY="python -m imgdiff.cleanup"
+UNPACK_PY="python -m imgdiff.unpack"
+DIFFIMG_PY="python -m imgdiff.diff"
+
+RESFILE=$(mktemp /tmp/resource.$$.XXX)
+
+cleanup() {
+    if [ "${KEEP_IMGDIRS+defined}" ] && [ -z "$KEEP_IMGDIRS" ]; then
+        if [ "${RESFILE+defined}" ] && \
+           [ -f "$RESFILE" ] && \
+           (cat $RESFILE | $CLEANUP_PY); then
+
+            rm -f "$RESFILE" || \
+                echo "[WARN] Some file can't be cleanup: $RESFILE" >&2
+
+            ([ "${tempimg1+defined}" ] && [ -d "$tempimg1" ]) && \
+            (rm -rf "$tempimg1" || \
+                echo "[WARN] Some file can't be cleanup: $tempimg1" >&2)
+
+            ([ "${tempimg2+defined}" ] && [ -d "$tempimg2" ]) && \
+            (rm -rf "$tempimg2" || \
+                echo "[WARN] Some file can't be cleanup: $tempimg2" >&2)
+        else
+            echo "[WARN] Some resource can't be cleanup, " \
+                "please check it manually: $RESFILE" >&2
+        fi
+    else
+        echo "[WARN] Please cleanup resource manually: $RESFILE" >&2
+    fi
+}
+
+usage() {
+    echo "Usage: $0 [options] <img1> <img2>"
+    echo "  -d: output directory. Default is '.'"
+    echo "  -k: keep unpacked images direcotries"
+    echo "  -o: diff output file name"
+    echo "  -c: conf defining trivial difference"
+}
+
+##############
+## Main
+##############
+TEMP=`getopt -o d:ko:c:h -n 'imgdiff' -- "$@"`
+if [ $? != 0 ] ; then echo "[ERROR] getopt failed" >&2 ; exit 1 ; fi
+eval set -- "$TEMP"
+
+BASE_PATH=$(pwd)
+KEEP_IMGDIRS=
+OUTPUT_FILENAME=img.diff
+UNIMPORTANT_CONF=
+
+while true ; do
+    case "$1" in
+        -d) BASE_PATH=$(realpath $2); shift 2;;
+        -k) KEEP_IMGDIRS=1; shift;;
+        -o) OUTPUT_FILENAME=$2; shift 2;;
+        -c) UNIMPORTANT_CONF=$2; shift 2;;
+        -h) usage; exit 0 ;;
+        --) shift; break ;;
+        *) echo "[ERROR] getopt internal error!" >&2 ; exit 1 ;;
+    esac
+done
+
+if [ $# -lt 2 ]; then
+    echo "[ERROR] Requires two image files at least" >&2
+    exit 1
+fi
+
+if [ ! -d "$BASE_PATH" ]; then
+    echo "$BASE_PATH: No such direcotry" >&2
+    exit 1
+fi
+
+img1=$1
+img2=$2
+
+tempimg1=$BASE_PATH/img1
+tempimg2=$BASE_PATH/img2
+
+##############
+#trap cleanup INT TERM EXIT ABRT
+trap cleanup EXIT
+
+start_time=$(date +%s)
+echo "Unpacking images ..."
+cat /dev/null > $RESFILE
+$UNPACK_PY $img1 $tempimg1 $RESFILE
+$UNPACK_PY $img2 $tempimg2 $RESFILE
+
+#parted $img1 -s 'unit B print' > $tempimg1/partition_table.txt
+#parted $img2 -s 'unit B print' > $tempimg2/partition_table.txt
+
+echo "Comapring images ..."
+if [ -n "$UNIMPORTANT_CONF" ]; then
+    opts="-c $UNIMPORTANT_CONF"
+else
+    opts=
+fi
+# need sudo here to read all files in images
+# generate unified(-u) diff output
+sudo diff -r -u $tempimg1 $tempimg2 | tee ${OUTPUT_FILENAME}.orig.txt | $DIFFIMG_PY $opts >$OUTPUT_FILENAME

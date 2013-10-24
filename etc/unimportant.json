@@ -1,0 +1,27 @@
+{
+    "ignoreFiles": [
+        "*.log",
+        "*.cache",
+        "machine-id",
+        "*/zypp/AnonymousUniqueId",
+        "/var/cache/*",
+        "/etc/shadow*",
+        "/var/lib/rpm/*",
+        "/boot/extlinux/ldlinux.sys"
+        ,"/dev/*"
+        ,"/var/lib/random-seed"
+        ,"/opt/usr/dbspace/*"
+        ,"/opt/dbspace/*"
+        ,"/boot/vmlinuz"
+        ],
+    "ignoreLines": [{
+        "Files": ["/etc/machine-id"],
+        "Lines": ["UUID=.*"]
+    }, {
+        "Files": ["extlinux.conf"],
+        "Lines": ["^label .*", "^[ \\t]*linux .*", "^[ \t]*append.*root=.*"]
+    }, {
+        "Files": ["/etc/os-release", "/etc/system-release", "/etc/tizen-release"],
+        "Lines": ["^BUILD_ID=.*"]
+    }]
+}
