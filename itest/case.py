@@ -1,6 +1,7 @@
 # vim: set sw=4 ts=4 ai et:
 import os
 import sys
+import time
 import logging
 
 import pexpect
@@ -23,31 +24,48 @@ class TimeoutError(Exception):
     pass
 
 
-def pcall(cmd, args=(), expecting=(), timeout=None, output=None, **spawn_opts):
+def pcall(cmd, args=(), expecting=(), output=None, eof_timeout=None, output_timeout=None, **spawn_opts):
     '''call cmd with expecting
     expecting: list of pairs, first is expecting string, second is send string
-    timeout: in seconds, default is None(block forever)
-    redirect: redirect cmd stdout and stderr to file object
+    output: redirect cmd stdout and stderr to file object
+    eof_timeout: timeout for whole cmd in seconds. None means block forever
+    output_timeout: timeout if no output in seconds. Disabled by default
     spawn_opts: keyword arguments passed to spawn call
     '''
+    question = [pexpect.EOF, pexpect.TIMEOUT]
+    question.extend([ pair[0] for pair in expecting ])
+    if output_timeout:
+        question.append(r'\r|\n')
+    answer = [None]*2 + [ i[1] for i in expecting ]
 
-    question = [pexpect.EOF, pexpect.TIMEOUT] + \
-        [ pair[0] for pair in expecting ]
-    answer = [None, None] + [ pair[1] for pair in expecting ]
-
+    start = time.time()
     child = pexpect.spawn(cmd, list(args), **spawn_opts)
     if output:
         child.logfile_read = output
 
+    timeout = output_timeout if output_timeout else eof_timeout
     try:
         while True:
+            if output_timeout:
+                cost = time.time() - start
+                if cost >= eof_timeout:
+                    msg = 'Run out of time in %s seconds!:%s %s' % \
+                        (cost, cmd, ' '.join(args))
+                    raise TimeoutError(msg)
+
             i = child.expect(question, timeout=timeout)
             if i == 0: # EOF
                 break
             elif i == 1: # TIMEOUT
-                msg = 'run out of time in %s seconds!:%s %s' % \
-                    (timeout, cmd, ' '.join(args))
-                raise TimeoutError(msg)
+                if output_timeout:
+                    msg = 'Hanging for %s seconds!:%s %s'
+                else:
+                    msg = 'Run out of time in %s seconds!:%s %s'
+                raise TimeoutError(msg % (timeout, cmd, ' '.join(args)))
+            elif output_timeout and i == len(question)-1:
+                # new line, stands for any output
+                # do nothing, just flush timeout counter
+                pass
             else:
                 child.sendline(answer[i])
     finally:
@@ -73,7 +91,7 @@ def sudo(cmd):
     logging.info(cmd)
 
     expecting = [(SUDO_PASS_PROMPT_PATTERN, settings.SUDO_PASSWD)]
-    return pcall(cmd, expecting=expecting, timeout=60, output=sys.stdout)
+    return pcall(cmd, expecting=expecting, output=sys.stdout, eof_timeout=10)
 
 
 class Tee(object):
@@ -268,8 +286,10 @@ set -x
             return pcall('/bin/bash',
                          [script],
                          expecting=expecting,
-                         timeout=float(settings.RUN_CASE_TIMEOUT),
-                         output=self.logfile)
+                         output=self.logfile,
+                         eof_timeout=float(settings.RUN_CASE_TIMEOUT),
+                         output_timeout=float(settings.HANGING_TIMEOUT),
+                         )
         except Exception as err:
             self._log('ERROR: pcall error:%s\n%s' % (script, err))
             return -1
