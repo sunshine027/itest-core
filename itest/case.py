@@ -5,6 +5,10 @@ import time
 import logging
 
 import pexpect
+if hasattr(pexpect, 'spawnb'): # pexpect-u-2.5
+    spawn = pexpect.spawnb
+else:
+    spawn = pexpect.spawn
 
 from itest.conf import settings
 from itest.utils import now, cd, get_machine_labels
@@ -39,7 +43,7 @@ def pcall(cmd, args=(), expecting=(), output=None, eof_timeout=None, output_time
     answer = [None]*2 + [ i[1] for i in expecting ]
 
     start = time.time()
-    child = pexpect.spawn(cmd, list(args), **spawn_opts)
+    child = spawn(cmd, list(args), **spawn_opts)
     if output:
         child.logfile_read = output
 
