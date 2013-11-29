@@ -1,4 +1,39 @@
-* Thu Jan 24 2013 Guan Junchun <junchunx.guan@intel.com> v1.1@8831718
+* Fri Nov 29 2013 Huang, Hao <hao.h.huang@intel.com> - 1.7
+  * Add script imgdiff
+  * Make compatible for pexpect-2.5
+
+* Fri Nov 29 2013 Huang, Hao <hao.h.huang@intel.com> - 1.6
+  * Merge "Raise Timeout error if no output for a while." into devel
+  * Raise Timeout error if no output for a while.
+  * Remove ksctrl scripts
+  * Print log to sys.stdout instead of /dev/fd/1
+  * fix ksctrol can't find image
+  * fix xml report can not display
+  * Merge "Generate xUnit report for ksctrl." into devel
+  * Add python-urlgrabber as requirement.
+  * Generate xUnit report for ksctrl.
+  * Fetch KS files starting from images/ URL.
+  * Add script ksctrl
+  * Ignore keyword if it's not a component name.
+  * Remove feature of auto retry when test failed
+  * Remove --install-layout=deb in setup.py
+  * Merge "Rewrite code of locking testspace" into devel
+  * Rewrite code of locking testspace
+  * Remove a useless function in itest.utils
+  * Strip redundant white space from distribution info.
+  * Support selecting platforms in cases.
+  * Skip a test when a SkipTest exception is raised.
+  * Support xunit XML format of report(#1065).
+  * ctrl-c can't break runtest(#1099).
+  * Remove HTML report and auto sync feature
+  * Change requirement from "pexpect<2.5" to "pexpect"
+  * Change name to itest-core for deb package
+  * Changing package name from itest to itest-core
+  * Ignore .osc and tarball in packaging dir
+  * Add spec and dsc to build rpm and deb packages
+  * Moving itest core framework from itest project
+
+* Thu Jan 24 2013 Guan Junchun <junchunx.guan@intel.com> - 1.1
 - Support debian building
 - bump to version 1.1
 - add an osc certificat to resolve the obs certification issue

@@ -1,10 +1,10 @@
 Format: 1.0
 Source: itest-core
-Version: 1.3
+Version: 1.7
 Binary: itest-core
-Maintainer: Junchun Guan <junchunx.guan@intel.com>
+Maintainer: Huang Hao<hao.h.huang@intel.com>, Junchun Guan <junchunx.guan@intel.com>
 Architecture: all
 Standards-Version: 3.7.1
 Build-Depends: debhelper (>= 4.0.0), python-dev, python-setuptools
 Files:
- f4fc22e0bd89f11ccd79179584271985 27328 itest-core_1.3.tar.gz
+ 10f144f5d20a47dcd262c9b976642784 37943 itest-core_1.7.tar.gz

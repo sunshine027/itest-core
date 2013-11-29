@@ -1,13 +1,18 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 %{!?python_version: %define python_version %(%{__python} -c "import sys; sys.stdout.write(sys.version[:3])")}
 Name:       itest-core
-Summary:    gbs system test automatic script and test cases
-Version:    1.3
-Release:    1
+Summary:    Functional testing utility
+Version:    1.7
+%if 0%{?opensuse_bs}
+Release:    0.dev.<CI_CNT>.<B_CNT>
+%else
+Release:    0
+%endif
+
 Group:      Development/Tools
 License:    GPLv2
 BuildArch:  noarch
-URL:        http://www.tizen.org
+URL:        https://otctools.jf.intel.com/pm/projects/itest
 Source0:    %{name}_%{version}.tar.gz
 
 Requires:   python >= 2.6
@@ -25,7 +30,7 @@ BuildRequires: python-setuptools
 BuildRequires: python-devel
 
 %description
-gbs system test
+Functional testing utility
 
 %prep
 %setup -q -n %{name}-%{version}
