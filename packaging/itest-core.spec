@@ -26,6 +26,8 @@ Requires:   pexpect
 Requires:   python-argparse
 %endif
 
+Requires: python-jinja2
+
 BuildRequires: python-setuptools
 BuildRequires: python-devel
 

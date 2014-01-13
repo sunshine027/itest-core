@@ -13,8 +13,13 @@ WORKSPACE = os.path.expanduser('~/testspace')
 
 
 CASES_DIR = 'cases'
+
 FIXTURES_DIR = 'fixtures'
 
+# All case text is actually JinJa2 template. Default template directories
+# will include the dirname of the case file and CASES_DIR. You can set
+# external template directories here, it should be a list string of path.
+TEMPLATE_DIRS = ()
 
 # Mapping from suite name to a list of cases.
 # For example, an ENV can have special suite names such as "Critical" and

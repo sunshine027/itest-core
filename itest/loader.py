@@ -1,5 +1,6 @@
 import os
 import re
+from jinja2 import Environment, FileSystemLoader
 
 from itest.case import TestCase
 from itest.suite import TestSuite
@@ -221,18 +222,22 @@ class FilePattern(object):
 
     case_parser_class = CaseParser
 
-    def load(self, name, _env):
+    def load(self, name, env):
         if not os.path.isfile(name):
             return
 
-        path = os.path.abspath(name)
-        with open(path) as f:
-            text = f.read()
+        template_dirs = (
+            os.path.abspath(os.path.dirname(name)),
+            env.cases_dir,
+            ) + env.TEMPLATE_DIRS
+        jinja2_env = Environment(loader=FileSystemLoader(template_dirs))
+        template = jinja2_env.get_template(os.path.basename(name))
+        text = template.render(env=env)
 
         parser = self.case_parser_class()
         sec = parser.parse(text)
 
-        return TestCase(path, **sec)
+        return TestCase(os.path.abspath(name), **sec)
 
 
 class DirPattern(object):
