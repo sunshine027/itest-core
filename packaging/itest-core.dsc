@@ -7,4 +7,4 @@ Architecture: all
 Standards-Version: 3.7.1
 Build-Depends: debhelper (>= 4.0.0), python-dev, python-setuptools
 Files:
- 10f144f5d20a47dcd262c9b976642784 37943 itest-core_1.7.tar.gz
+ 62914ca014e8f1fda6800664ec24c382 40446 itest-core_1.7.tar.gz

@@ -2,6 +2,7 @@ import os
 import re
 from jinja2 import Environment, FileSystemLoader
 
+from itest import xmlparser
 from itest.case import TestCase
 from itest.suite import TestSuite
 
@@ -220,8 +221,6 @@ class AliasPattern(object):
 class FilePattern(object):
     '''test from file name'''
 
-    case_parser_class = CaseParser
-
     def load(self, name, env):
         if not os.path.isfile(name):
             return
@@ -234,10 +233,13 @@ class FilePattern(object):
         template = jinja2_env.get_template(os.path.basename(name))
         text = template.render(env=env)
 
-        parser = self.case_parser_class()
-        sec = parser.parse(text)
+        if text.startswith('<'): # assume it is a XML file
+            data = xmlparser.Parser().parse(text)
+            data['issue'] = data.pop('tracking') # for backwards compability
+        else:
+            data = CaseParser().parse(text)
 
-        return TestCase(os.path.abspath(name), **sec)
+        return TestCase(os.path.abspath(name), **data)
 
 
 class DirPattern(object):

@@ -45,3 +45,4 @@ Functional testing utility
 %{python_sitelib}/*
 %{_bindir}/runtest
 %{_bindir}/imgdiff
+%{_bindir}/convert2xml.py
