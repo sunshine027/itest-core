@@ -21,6 +21,7 @@ Requires:   python-pexpect
 %else
 Requires:   pexpect
 %endif
+Requires:   spm
 
 %if "%{?python_version}" < "2.7"
 Requires:   python-argparse
@@ -34,6 +35,14 @@ BuildRequires: python-devel
 %description
 Functional testing utility
 
+%package -n spm
+Summary:	smart package management tool
+
+%description -n spm
+Smart package management tool on Linux
+A wrapper of yum, apt-get, zypper command
+Support Redhat, Debian, SuSE
+
 %prep
 %setup -q -n %{name}-%{version}
 
@@ -42,7 +51,17 @@ Functional testing utility
 
 %files
 %defattr(-,root,root,-)
-%{python_sitelib}/*
+%dir %{python_sitelib}/imgdiff
+%dir %{python_sitelib}/itest
+%{python_sitelib}/itest-*-py*.egg-info
+%{python_sitelib}/imgdiff/*
+%{python_sitelib}/itest/*
 %{_bindir}/runtest
 %{_bindir}/imgdiff
 %{_bindir}/convert2xml.py
+
+%files -n spm
+%defattr(-,root,root,-)
+%dir %{python_sitelib}/spm
+%{python_sitelib}/spm/*
+%{_bindir}/spm

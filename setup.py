@@ -15,11 +15,12 @@ setup(name='itest',
       'dawei.yang@intel.com, hao.h.huang@intel.com, junchunx.guan@intel.com',
       license='GPLv2',
       platforms=['Linux'],
-      packages=['itest', 'itest.conf', 'imgdiff'],
+      packages=['itest', 'itest.conf', 'imgdiff', 'spm'],
       package_data={'': ['*.html']},
       scripts=[
             'scripts/runtest',
             'scripts/imgdiff',
             'scripts/convert2xml.py',
+            'scripts/spm',
           ],
      )
