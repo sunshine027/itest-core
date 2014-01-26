@@ -4,6 +4,7 @@ These LazyObject, LazySettings and Settings are mainly copied from Django
 
 import os
 import imp
+import time
 
 from itest.conf import global_settings
 
@@ -71,30 +72,43 @@ class LazySettings(LazyObject):
         is used the first time we need any settings at all, if the user has not
         previously configured the settings manually.
         """
-        try:
-            settings_module = os.environ[ENVIRONMENT_VARIABLE]
-            if not settings_module: # If it's set but is an empty string.
-                raise KeyError
-        except KeyError:
-            # NOTE: This is arguably an EnvironmentError, but that causes
-            # problems with Python's interactive help.
-            raise ImportError("Settings cannot be imported, because environment variable %s is undefined." % ENVIRONMENT_VARIABLE)
-
-        self._wrapped = Settings(settings_module)
+        if ENVIRONMENT_VARIABLE in os.environ and os.environ[ENVIRONMENT_VARIABLE]:
+            self._wrapped = Settings(os.environ[ENVIRONMENT_VARIABLE])
+        else:
+            self._wrapped = Settings()
 
 
 class Settings(object):
 
-    def __init__(self, settings_module):
+    def __init__(self, settings_module=None):
         # update this dict from global settings (but only for ALL_CAPS settings)
         for setting in dir(global_settings):
             if setting == setting.upper():
                 setattr(self, setting, getattr(global_settings, setting))
 
-        # store the settings module in case someone later cares
-        self.ENV_PATH = os.path.abspath(settings_module)
-        settings_fname = os.path.join(self.ENV_PATH, 'settings.py')
+        self._set_predefined_vars(settings_module)
 
+        if settings_module:
+            self._load_settings(settings_module)
+
+    def _set_predefined_vars(self, settings_module):
+        """
+        Set some pre-defined variables
+        """
+        if settings_module:
+            self.env_root = os.path.abspath(settings_module)
+            self.cases_dir = os.path.join(self.env_root, self.CASES_DIR)
+            self.fixtures_dir = os.path.join(self.env_root, self.FIXTURES_DIR)
+        else:
+            self.env_root = None
+            self.cases_dir = None
+            self.fixtures_dir = None
+
+    def _load_settings(self, settings_module):
+        """
+        Load settings.py and overwrite the default global settings
+        """
+        settings_fname = os.path.join(self.env_root, 'settings.py')
         try:
             mod = imp.load_source('settings', settings_fname)
         except (ImportError, IOError), e:
@@ -104,6 +118,11 @@ class Settings(object):
             if setting == setting.upper():
                 setting_value = getattr(mod, setting)
                 setattr(self, setting, setting_value)
+
+        if self.TZ:
+            os.environ['TZ'] = self.TZ
+            time.tzset()
+
 
 
 settings = LazySettings()

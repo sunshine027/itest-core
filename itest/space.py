@@ -6,6 +6,7 @@ import shutil
 import logging
 import tempfile
 
+from itest.conf import settings
 from itest.case import sudo
 from itest.utils import calculate_directory_size
 
@@ -20,21 +21,22 @@ class TestSpace(object):
         self.rundir = os.path.join(workdir, 'running')
         self.fixdir = os.path.join(workdir, 'fixtures')
 
-    def setup(self, suite, env):
+    def setup(self, suite):
         if not self._acquire_lock():
             msg = "Another instance is working on this workspace(%s). " \
                 "Please run ps to check." % self.workdir
             logging.error(msg)
             return False
 
-        self._setup(suite, env)
+        self._setup(suite)
         return True
 
     def new_test_dir(self):
         hash_ = str(uuid.uuid4()).replace('-', '')
         path = os.path.join(self.rundir, hash_)
         os.mkdir(path)
-        self._copy_fixtures(path)
+        if settings.env_root:
+            self._copy_fixtures(path)
         return path
 
     def new_log_name(self, test):
@@ -51,7 +53,7 @@ class TestSpace(object):
             else:
                 shutil.copy(source, target)
 
-    def _setup(self, suite, env):
+    def _setup(self, suite):
         os.mkdir(self.logdir)
         os.mkdir(self.rundir)
 
@@ -59,9 +61,10 @@ class TestSpace(object):
         for test in suite:
             shutil.copy(test.filename, self.logdir)
 
-        size = calculate_directory_size(env.fixtures_dir)
-        logging.info('copying test fixtures(%s) ...' % size)
-        shutil.copytree(env.fixtures_dir, self.fixdir)
+        if settings.env_root:
+            size = calculate_directory_size(settings.fixtures_dir)
+            logging.info('copying test fixtures(%s) ...' % size)
+            shutil.copytree(settings.fixtures_dir, self.fixdir)
 
     def _acquire_lock(self):
         fp = open(self.lockname, 'wb')

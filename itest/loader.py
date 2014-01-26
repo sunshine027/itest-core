@@ -3,6 +3,7 @@ import re
 from jinja2 import Environment, FileSystemLoader
 
 from itest import xmlparser
+from itest.conf import settings
 from itest.case import TestCase
 from itest.suite import TestSuite
 
@@ -170,19 +171,22 @@ class CaseParser(BaseParser):
 
 class TestLoader(object):
 
-    def load_args(self, args, env):
-        '''load test from all args'''
-        if not args:
-            path = os.path.join(env.ENV_PATH, env.CASES_DIR)
-            return self.load(path, env)
+    def load_args(self, args):
+        '''
+        Load tests from command arguments
+        '''
+        if not args and settings.env_root:
+            return self.load(settings.env_root)
 
         suite = TestSuite()
         for arg in args:
-            suite.add_test(self.load(arg, env))
+            suite.add_test(self.load(arg))
         return suite
 
-    def load(self, sel, env):
-        '''load a single test pattern'''
+    def load(self, sel):
+        '''
+        Load tests from a single test select pattern `sel`
+        '''
         def _is_test(ret):
             return isinstance(ret, TestSuite) or isinstance(ret, TestCase)
 
@@ -195,7 +199,7 @@ class TestLoader(object):
                 if callable(pattern):
                     pattern = pattern()
 
-                ret = pattern.load(sel, env)
+                ret = pattern.load(sel)
                 if not ret:
                     continue
 
@@ -213,29 +217,29 @@ class TestLoader(object):
 class AliasPattern(object):
     '''dict key of settings.SUITES is alias for its value'''
 
-    def load(self, sel, env):
-        if sel in env.SUITES:
-            return env.SUITES[sel]
+    def load(self, sel):
+        if sel in settings.SUITES:
+            return settings.SUITES[sel]
 
 
 class FilePattern(object):
     '''test from file name'''
 
-    def load(self, name, env):
+    def load(self, name):
         if not os.path.isfile(name):
             return
 
-        template_dirs = (
-            os.path.abspath(os.path.dirname(name)),
-            env.cases_dir,
-            ) + env.TEMPLATE_DIRS
+        template_dirs = [ os.path.abspath(os.path.dirname(name)) ]
+        if settings.cases_dir:
+            template_dirs.append(settings.cases_dir)
         jinja2_env = Environment(loader=FileSystemLoader(template_dirs))
         template = jinja2_env.get_template(os.path.basename(name))
-        text = template.render(env=env)
+        text = template.render()
 
         if text.startswith('<'): # assume it is a XML file
             data = xmlparser.Parser().parse(text)
-            data['issue'] = data.pop('tracking') # for backwards compability
+            if 'tracking' in data:
+                data['issue'] = data.pop('tracking') # for backwards compability
         else:
             data = CaseParser().parse(text)
 
@@ -245,7 +249,7 @@ class FilePattern(object):
 class DirPattern(object):
     '''find all tests recursively in a dir'''
 
-    def load(self, top, _env):
+    def load(self, top):
         if os.path.isdir(top):
             return list(self._walk(top))
 
@@ -262,34 +266,35 @@ class ComponentPattern(object):
     _components = None
 
     @staticmethod
-    def guess_components(env):
+    def guess_components():
+        if not settings.env_root:
+            return ()
         comp = []
-        path = os.path.join(env.ENV_PATH, env.CASES_DIR)
-        for base in os.listdir(path):
+        for base in os.listdir(settings.cases_dir):
             full = os.path.join(path, base)
             if os.path.isdir(full):
                 comp.append(base)
         return set(comp)
 
     @classmethod
-    def is_component(cls, comp, env):
+    def is_component(cls, comp):
         if cls._components is None:
-            cls._components = cls.guess_components(env)
+            cls._components = cls.guess_components()
         return comp in cls._components
 
-    def load(self, comp, env):
-        if self.is_component(comp, env):
-            return os.path.join(env.ENV_PATH, env.CASES_DIR, comp)
+    def load(self, comp):
+        if self.is_component(comp):
+            return os.path.join(settings.cases_dir, comp)
 
 
 class InversePattern(object):
     '''string starts with "!" is the inverse of string[1:]'''
 
-    def load(self, sel, env):
+    def load(self, sel):
         if sel.startswith('!'):
             comp = sel[1:]
-            comps = ComponentPattern.guess_components(env)
-            if ComponentPattern.is_component(comp, env):
+            comps = ComponentPattern.guess_components()
+            if ComponentPattern.is_component(comp):
                 return [c for c in comps if c != comp]
             # if the keyword isn't a component name, then it is useless
             return list(comps)
@@ -300,7 +305,7 @@ class IntersectionPattern(object):
 
     loader_class = TestLoader
 
-    def load(self, sel, env):
+    def load(self, sel):
         if sel.find('&&') <= 0:
             return
 
@@ -314,7 +319,7 @@ class IntersectionPattern(object):
             return inter
 
         loader = self.loader_class()
-        many = [ loader.load(part, env)
+        many = [ loader.load(part)
                 for part in sel.split('&&') ]
 
         return TestSuite(intersection(many))

@@ -8,7 +8,6 @@ import logging
 from argparse import ArgumentParser, ArgumentError
 
 from itest import __version__
-from itest.env import TestEnv
 from itest.conf import settings, ENVIRONMENT_VARIABLE
 from itest.space import TestSpace
 from itest.loader import TestLoader
@@ -17,19 +16,17 @@ from itest.signals import install_handler
 
 
 def run_test(args):
-    env = TestEnv(settings, args)
-
     loader = TestLoader()
-    suite = loader.load_args(args.cases, env)
+    suite = loader.load_args(args.cases)
     if suite.count < 1:
         print 'No case found'
         return
 
     space = TestSpace(settings.WORKSPACE)
-    if not space.setup(suite, env):
+    if not space.setup(suite):
         return
 
-    result = TextTestRunner(args.verbose).run(suite, space, env)
+    result = TextTestRunner(args.verbose).run(suite, space)
     return result.was_successful
 
 

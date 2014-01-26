@@ -38,7 +38,7 @@ class TestResult(object):
         test.cost_time = now - test.start_time
         test.cost_time_from_beginning = now - self.start_time
 
-    def runner_start(self, _test, _space, _env):
+    def runner_start(self, _test, _space):
         '''test runner start'''
         self.start_time = time.time()
 

@@ -164,10 +164,9 @@ class TestCase(object):
 
     def guess_component(self, filename):
         # assert that filename is absolute path
-        cases_dir = os.path.join(settings.ENV_PATH, settings.CASES_DIR)
-        if not filename.startswith(cases_dir):
+        if not settings.env_root or not filename.startswith(settings.cases_dir):
             return 'unknown'
-        relative = filename[len(cases_dir)+1:].split(os.sep)
+        relative = filename[len(settings.cases_dir)+1:].split(os.sep)
         # >1 means [0] is an dir name
         return relative[0] if len(relative) > 1 else 'unknown'
 
@@ -217,10 +216,12 @@ set -ex
         return self._make_code('steps', code)
 
     def _make_coverage_code(self):
-        if not settings.ENABLE_COVERAGE:
+        if not settings.ENABLE_COVERAGE or \
+                not settings.env_root or \
+                not settings.TARGET_NAME:
             return ''
 
-        rcfile = os.path.join(settings.ENV_PATH, settings.COVERAGE_RCFILE)
+        rcfile = os.path.join(settings.env_root, settings.COVERAGE_RCFILE)
         if os.path.exists(rcfile):
             opts = '--rcfile %s' % rcfile
         else:

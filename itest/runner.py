@@ -16,14 +16,14 @@ class TextTestRunner(object):
     def _make_result(self, space):
         return self.result_class(space, self.verbose)
 
-    def run(self, test, space, env):
+    def run(self, test, space):
         print 'plan to run %d test%s' % (test.count, 's' if test.count > 1 else '')
 
         result = self._make_result(space)
         register_result(result)
 
         start_time = time.time()
-        result.runner_start(test, space, env)
+        result.runner_start(test, space)
         try:
             test.run(result, space, self.verbose)
         except KeyboardInterrupt:
