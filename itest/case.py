@@ -130,7 +130,7 @@ class TestCase(object):
                  setup='', teardown='',
                  qa=(), issue=None,
                  precondition='', tag='', version='',
-                 conditions=None,
+                 conditions=None, fixtures=None,
                  ):
         self.filename = fname
         self.summary = summary
@@ -142,6 +142,7 @@ class TestCase(object):
         self.qa = qa
         self.issue = issue if issue else {}
         self.conditions = conditions or {}
+        self.fixtures = fixtures or ()
 
         self.component = self.guess_component(self.filename)
         #TODO: need a more reasonable and meaningful id rather than this
@@ -304,7 +305,8 @@ set -x
         try:
             self._check_conditions()
             # FIXME: make this self.rundir as local var
-            self.rundir = space.new_test_dir()
+            self.rundir = space.new_test_dir(os.path.dirname(self.filename),
+                                             self.fixtures)
             with cd(self.rundir):
                 self._open_log(space, verbose)
                 self._make_scripts(space)

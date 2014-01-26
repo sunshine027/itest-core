@@ -93,3 +93,18 @@ class Parser(object):
             'whitelist': _platforms('whitelist'),
             'blacklist': _platforms('blacklist'),
             }
+
+    def _on_fixtures(self, element):
+        """
+        <fixtures>
+            <copy src="conf/a.conf" />
+            <template src="conf/b.conf" target="newdir/c.conf" />
+            <content target="c.conf">conf content</content>
+        </fixtures>
+        """
+        return [ {
+            'type': i.tag,
+            'src': i.get('src'),
+            'target': i.get('target'),
+            'text': i.text,
+            } for i in element if i.tag in ('copy', 'template', 'content') ]

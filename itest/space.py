@@ -6,6 +6,8 @@ import shutil
 import logging
 import tempfile
 
+from jinja2 import Environment, FileSystemLoader
+
 from itest.conf import settings
 from itest.case import sudo
 from itest.utils import calculate_directory_size
@@ -19,7 +21,6 @@ class TestSpace(object):
         self.lockfp = None
         self.logdir = os.path.join(workdir, 'logs')
         self.rundir = os.path.join(workdir, 'running')
-        self.fixdir = os.path.join(workdir, 'fixtures')
 
     def setup(self, suite):
         if not self._acquire_lock():
@@ -31,21 +32,76 @@ class TestSpace(object):
         self._setup(suite)
         return True
 
-    def new_test_dir(self):
+    def new_test_dir(self, casedir, fixtures):
         hash_ = str(uuid.uuid4()).replace('-', '')
         path = os.path.join(self.rundir, hash_)
         os.mkdir(path)
-        if settings.env_root:
-            self._copy_fixtures(path)
+        self._copy_fixtures(path, casedir, fixtures)
         return path
 
     def new_log_name(self, test):
         name = os.path.basename(test.filename) + '.log'
         return os.path.join(self.logdir, name)
 
-    def _copy_fixtures(self, todir):
-        for name in os.listdir(self.fixdir):
-            source = os.path.join(self.fixdir, name)
+    def _copy_fixtures(self, todir, casedir, fixtures):
+        if not fixtures and settings.fixtures_dir:
+            return self._copy_all_fixtures(todir)
+
+        def _make_dir(path):
+            try:
+                os.mkdir(path)
+            except OSError as err:
+                if err.errno != errno.EEXIST:
+                    raise
+
+        def _copy(source, target):
+            _make_dir(os.path.dirname(target))
+            if os.path.isdir(source):
+                shutil.copytree(source, target)
+            else:
+                shutil.copy(source, target)
+
+        def _template(source, target):
+            template_dirs = [os.path.abspath(os.path.dirname(source))]
+            if settings.fixtures_dir:
+                template_dirs.append(settings.fixtures_dir)
+            jinja2_env = Environment(loader=FileSystemLoader(template_dirs))
+            template = jinja2_env.get_template(os.path.basename(source))
+            text = template.render()
+
+            _make_dir(os.path.dirname(target))
+            with open(target, 'w') as writer:
+                writer.write(text)
+
+        def _write(text, target):
+            _make_dir(os.path.dirname(target))
+            with open(target, 'w') as writer:
+                writer.write(text)
+
+        for item in fixtures:
+            if 'src' in item and item['src']:
+                source = os.path.join(casedir, item['src'])
+                if not os.path.exists(source) and settings.fixtures_dir:
+                    source = os.path.join(settings.fixtures_dir, item['src'])
+            else:
+                source = None
+            if 'target' in item and item['target']:
+                target = os.path.join(todir, item['target'])
+            else:
+                target = os.path.join(todir, os.path.basename(source))
+
+            if item['type'] == 'copy':
+                _copy(source, target)
+            elif item['type'] == 'template':
+                _template(source, target)
+            elif item['type'] == 'content':
+                _write(item['text'], target)
+            else:
+                raise Exception("Unknown fixture type: %s" % item['type'])
+
+    def _copy_all_fixtures(self, todir):
+        for name in os.listdir(settings.fixtures_dir):
+            source = os.path.join(settings.fixtures_dir, name)
             target = os.path.join(todir, name)
 
             if os.path.isdir(source):
@@ -60,11 +116,6 @@ class TestSpace(object):
         logging.info('copying test cases ...')
         for test in suite:
             shutil.copy(test.filename, self.logdir)
-
-        if settings.env_root:
-            size = calculate_directory_size(settings.fixtures_dir)
-            logging.info('copying test fixtures(%s) ...' % size)
-            shutil.copytree(settings.fixtures_dir, self.fixdir)
 
     def _acquire_lock(self):
         fp = open(self.lockname, 'wb')
