@@ -35,7 +35,7 @@ def make_xml(data):
             if mres:
                 typ, number = mres.group(1), mres.group(5)
                 if typ and typ.lower().startswith('c'):
-                    tracking.append('    <change>%s</change' % number)
+                    tracking.append('    <change>%s</change>' % number)
                 else:
                     tracking.append('    <ticket>%s</ticket>' % number)
         if tracking:

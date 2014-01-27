@@ -26,7 +26,7 @@ class Parser(object):
         """
         Returns stripped text of `element`
         """
-        return element.text.strip()
+        return element.text.strip() if element.text else ''
 
     _on_formatversion = _text
     _on_summary = _text
@@ -59,13 +59,14 @@ class Parser(object):
         for node in element:
             if state == 0:
                 if node.tag == 'prompt':
-                    prompt = node.text
+                    prompt = self._text(node)
                     state = 1
                 else:
                     raise Exception("Case syntax error: expects <prompt> rather than %s" % node.tag)
             elif state == 1:
                 if node.tag == 'answer':
-                    data.append((prompt, node.text))
+                    answer = self._text(node)
+                    data.append((prompt, answer))
                     state = 0
                 else:
                     raise Exception("Case syntax error: expects <answer> rather than %s" % node.tag)
@@ -106,5 +107,5 @@ class Parser(object):
             'type': i.tag,
             'src': i.get('src'),
             'target': i.get('target'),
-            'text': i.text,
+            'text': self._text(i),
             } for i in element if i.tag in ('copy', 'template', 'content') ]

@@ -32,19 +32,19 @@ class TestSpace(object):
         self._setup(suite)
         return True
 
-    def new_test_dir(self, casedir, fixtures):
+    def new_test_dir(self, casever, casedir, fixtures):
         hash_ = str(uuid.uuid4()).replace('-', '')
         path = os.path.join(self.rundir, hash_)
         os.mkdir(path)
-        self._copy_fixtures(path, casedir, fixtures)
+        self._copy_fixtures(path, casever, casedir, fixtures)
         return path
 
     def new_log_name(self, test):
         name = os.path.basename(test.filename) + '.log'
         return os.path.join(self.logdir, name)
 
-    def _copy_fixtures(self, todir, casedir, fixtures):
-        if not fixtures and settings.fixtures_dir:
+    def _copy_fixtures(self, todir, casever, casedir, fixtures):
+        if casever != 'xml1.0' and settings.fixtures_dir:
             return self._copy_all_fixtures(todir)
 
         def _make_dir(path):

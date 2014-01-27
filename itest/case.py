@@ -132,6 +132,7 @@ class TestCase(object):
                  precondition='', tag='', version='',
                  conditions=None, fixtures=None,
                  ):
+        self.version = version
         self.filename = fname
         self.summary = summary
         self.steps = steps
@@ -305,7 +306,8 @@ set -x
         try:
             self._check_conditions()
             # FIXME: make this self.rundir as local var
-            self.rundir = space.new_test_dir(os.path.dirname(self.filename),
+            self.rundir = space.new_test_dir(self.version,
+                                             os.path.dirname(self.filename),
                                              self.fixtures)
             with cd(self.rundir):
                 self._open_log(space, verbose)

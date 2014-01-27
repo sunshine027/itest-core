@@ -240,6 +240,7 @@ class FilePattern(object):
             data = xmlparser.Parser().parse(text)
             if 'tracking' in data:
                 data['issue'] = data.pop('tracking') # for backwards compability
+            data['version'] = 'xml1.0'
         else:
             data = CaseParser().parse(text)
 
