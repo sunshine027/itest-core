@@ -108,13 +108,13 @@ def parse_args():
         """
         Suffix shouldn't contain slash
         """
-        if value.find(os.path.sep) >= 0:
-            raise argparse.ArgumentTypeError("Suffix shouldn't contain slash")
+        if value and value.find(os.path.sep) >= 0:
+            raise argparse.ArgumentTypeError("Suffix shouldn't contain path separator")
         return value
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--in-place',
-        dest='suffix', type=_check_suffix,
+    parser.add_argument('-i', '--in-place', nargs='?',
+        dest='suffix', type=_check_suffix, default='',
         help='edit files in place (makes backup if extension supplied')
     parser.add_argument('cases', nargs='+',
         help='old format case files')
@@ -124,6 +124,13 @@ def main():
     """
     Main
     """
+    def _write(filename, content):
+        """
+        Write `content` to `filename`
+        """
+        with open(filename, 'w') as writer:
+            writer.write(content)
+
     def _edit_in_place(filename, backup, content):
         """Edit filename in place and make backup
         """
@@ -134,10 +141,13 @@ def main():
     args = parse_args()
     for filename in args.cases:
         xml = convert(filename)
-        if args.suffix:
+        if args.suffix: # -i .bak
             backup = filename + args.suffix
-            _edit_in_place(filename, backup, xml)
-        else:
+            os.rename(filename, backup)
+            _write(filename, xml)
+        elif args.suffix is None: # -i
+            _write(filename, xml)
+        else: # no -i
             print xml
 
 
