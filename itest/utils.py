@@ -99,3 +99,14 @@ def cd(path):
     os.chdir(path)
     yield
     os.chdir(old_path)
+
+def makedirs(path):
+    """
+    Recursively create `path`, do nothing if it exists
+    """
+    try:
+        os.makedirs(path)
+    except OSError as err:
+        import errno
+        if err.errno != errno.EEXIST:
+            raise

@@ -23,8 +23,7 @@ def run_test(args):
         return
 
     space = TestSpace(settings.WORKSPACE)
-    if not space.setup(suite):
-        return
+    space.setup(suite)
 
     result = TextTestRunner(args.verbose).run(suite, space)
     return result.was_successful
