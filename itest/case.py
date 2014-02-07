@@ -172,7 +172,7 @@ class TestCase(object):
         # >1 means [0] is an dir name
         return relative[0] if len(relative) > 1 else 'unknown'
 
-    def _make_scripts(self, space):
+    def _make_scripts(self):
         '''Make shell script of setup, teardown, steps
         '''
         os.mkdir(self.meta)
@@ -310,8 +310,8 @@ set -x
                                              os.path.dirname(self.filename),
                                              self.fixtures)
             with cd(self.rundir):
-                self._open_log(space, verbose)
-                self._make_scripts(space)
+                self._make_scripts()
+                self._open_log(verbose)
                 self._log('INFO: case start to run!')
                 self._setup()
                 try:
@@ -342,8 +342,8 @@ set -x
                 self.logfile.close()
                 self.delete_color_code_in_log_file(self.logname)
 
-    def _open_log(self, space, verbose):
-        self.logname = space.new_log_name(self)
+    def _open_log(self, verbose):
+        self.logname = os.path.join(self.rundir, self.meta, 'log')
         self.logfile = open(self.logname, 'a')
         if verbose > 1:
             self.logfile = Tee(self.logfile)

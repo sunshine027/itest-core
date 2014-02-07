@@ -35,10 +35,6 @@ class TestSpace(object):
         self._copy_fixtures(path, casever, casedir, fixtures)
         return path
 
-    def new_log_name(self, test):
-        name = os.path.basename(test.filename) + '.log'
-        return os.path.join(self.logdir, name)
-
     def _copy_fixtures(self, todir, casever, casedir, fixtures):
         if casever != 'xml1.0' and settings.fixtures_dir:
             return self._copy_all_fixtures(todir)
