@@ -24,10 +24,6 @@ class TestSpace(object):
         makedirs(self.logdir)
         makedirs(self.rundir)
 
-        logging.info('copying test cases ...')
-        for test in suite:
-            shutil.copy(test.filename, self.logdir)
-
     def new_test_dir(self, casever, casedir, fixtures):
         hash_ = str(uuid.uuid4()).replace('-', '')
         path = os.path.join(self.rundir, hash_)
