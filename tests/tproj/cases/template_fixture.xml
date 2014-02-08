@@ -1,0 +1,13 @@
+<testcase>
+  <summary>This fixture is a template file which
+  extends from another base file.
+  </summary>
+  <fixtures>
+    <template src="template" />
+  </fixtures>
+  <steps>
+cat template
+grep 'Only in base' template
+grep 'Only in child' template
+  </steps>
+</testcase>

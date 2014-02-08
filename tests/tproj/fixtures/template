@@ -1,0 +1,5 @@
+{% extends "template_base" %}
+
+{% block more %}
+Only in child
+{% endblock %}

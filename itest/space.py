@@ -62,8 +62,9 @@ class TestSpace(object):
                 source = os.path.join(casedir, item['src'])
                 if not os.path.exists(source) and settings.fixtures_dir:
                     source = os.path.join(settings.fixtures_dir, item['src'])
-            else:
-                source = None
+            elif item['type'] != 'content':
+                raise Exception("Attribute src can't be found")
+
             if 'target' in item and item['target']:
                 target = os.path.join(todir, item['target'])
             else:

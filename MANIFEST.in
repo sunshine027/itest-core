@@ -1,1 +1,3 @@
 include tests/cases/*.xml
+recursive-include tests/tproj *.py *.xml
+prune tests/tproj/fixtures

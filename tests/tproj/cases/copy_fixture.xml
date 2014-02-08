@@ -1,0 +1,9 @@
+<testcase>
+  <summary>Copy a fixture file into case workspace</summary>
+  <fixtures>
+    <copy src="empty" />
+  </fixtures>
+  <steps>
+    test -f empty
+  </steps>
+</testcase>

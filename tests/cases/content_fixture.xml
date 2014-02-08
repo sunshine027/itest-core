@@ -1,0 +1,10 @@
+<testcase>
+  <summary>Generate a fixture with given content</summary>
+  <fixtures>
+    <content target='afile'>1984</content>
+  </fixtures>
+  <steps>
+n=$(expr $(cat afile) - 4)
+[ $n -eq 1980 ]
+  </steps>
+</testcase>
