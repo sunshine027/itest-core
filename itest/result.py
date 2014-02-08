@@ -187,4 +187,11 @@ class XunitTestResult(TextTestResult):
         filename = os.path.join(self.space.logdir, self.xunit_file)
         with open(filename, 'w') as fp:
             fp.write(xml)
-        return filename
+
+        # Write a copy in current dir
+        # It's a short term solution to write 2 copies, after we change
+        # jenkins job to use the one in current dir, we can safely remove
+        # the one in test space's logs/ dir.
+        with open(self.xunit_file, 'w') as fp:
+            fp.write(xml)
+        return self.xunit_file
