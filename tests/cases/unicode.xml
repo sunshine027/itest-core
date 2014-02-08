@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase>
+  <summary>There is unicode characters in this case</summary>
+  <steps>
+  echo 中文可以有
+  </steps>
+</testcase>

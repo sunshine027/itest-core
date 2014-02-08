@@ -236,6 +236,12 @@ class FilePattern(object):
         template = jinja2_env.get_template(os.path.basename(name))
         text = template.render()
 
+        if isinstance(text, unicode):
+            text = text.encode('utf8')
+            # template returns unicode
+            # but xml parser only accepts str
+            # And we can only assume it's utf8 here
+
         if text.startswith('<'): # assume it is a XML file
             data = xmlparser.Parser().parse(text)
             if 'tracking' in data:
