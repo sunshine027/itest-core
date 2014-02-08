@@ -18,15 +18,13 @@ class TestSpace(object):
     def __init__(self, workdir):
         self.workdir = workdir
         self.logdir = os.path.join(workdir, 'logs')
-        self.rundir = os.path.join(workdir, 'running')
 
     def setup(self, suite):
         makedirs(self.logdir)
-        makedirs(self.rundir)
 
     def new_test_dir(self, casever, casedir, fixtures):
         hash_ = str(uuid.uuid4()).replace('-', '')
-        path = os.path.join(self.rundir, hash_)
+        path = os.path.join(self.workdir, hash_)
         os.mkdir(path)
         self._copy_fixtures(path, casever, casedir, fixtures)
         return path

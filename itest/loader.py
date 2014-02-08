@@ -272,7 +272,7 @@ class ComponentPattern(object):
             return ()
         comp = []
         for base in os.listdir(settings.cases_dir):
-            full = os.path.join(path, base)
+            full = os.path.join(settings.cases_dir, base)
             if os.path.isdir(full):
                 comp.append(base)
         return set(comp)
