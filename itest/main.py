@@ -29,25 +29,18 @@ def run_test(args):
     return result.was_successful
 
 
-def guess_env():
-    '''guess path of settings.py and set it into env
-    search order of settings.py:
-    1.if ITEST_ENV_PATH is set, use it
-    2.if $pwd/settings.py exists, use $pwd
-    3.$pwd=parent of $pwd, goto step 2, until parent of root
+def find_test_project_from_cwd():
     '''
-    if ENVIRONMENT_VARIABLE in os.environ:
-        return
-
+    Returns test project root directory or None
+    '''
     path = os.getcwd()
     while 1:
         name = os.path.join(path, 'settings.py')
         if os.path.exists(name):
-            os.environ[ENVIRONMENT_VARIABLE] = path
-            break
+            return path
 
         if path == '/':
-            break
+            return
         path = os.path.dirname(path)
 
 
@@ -92,16 +85,24 @@ def parse_args():
         'as setting ENABLE_COVERAGE=1')
     parser.add_argument('-t', '--tag', type=str.lower, action='append',
         default=[], help='attach tag which can be used as search keyword')
+    parser.add_argument('--test-project-path',
+        default=os.environ.get(ENVIRONMENT_VARIABLE),
+        help='set test project path under which there must be settings.py')
 
     return parser.parse_args()
 
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    guess_env()
     install_handler()
 
     args = parse_args()
+
+    if not args.test_project_path:
+        args.test_project_path = find_test_project_from_cwd()
+    if args.test_project_path:
+        os.environ[ENVIRONMENT_VARIABLE] = args.test_project_path
+
     if not args.debug:
         logging.getLogger().setLevel(logging.INFO)
 
