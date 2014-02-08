@@ -175,8 +175,6 @@ class TestCase(object):
     def _make_scripts(self):
         '''Make shell script of setup, teardown, steps
         '''
-        os.mkdir(self.meta)
-
         self.setup_script =  self._make_setup_script()
         self.steps_script = self._make_steps_script()
         self.teardown_script = self._make_teardown_script()
@@ -310,8 +308,9 @@ set -x
                                              os.path.dirname(self.filename),
                                              self.fixtures)
             with cd(self.rundir):
-                self._make_scripts()
+                os.mkdir(self.meta)
                 self._open_log(verbose)
+                self._make_scripts()
                 self._log('INFO: case start to run!')
                 self._setup()
                 try:
@@ -357,8 +356,9 @@ set -x
 
     def _make_code(self, name, code):
         path = os.path.join(self.meta, name)
+        data = code.encode('utf8') if isinstance(code, unicode) else code
         with open(path, 'w') as f:
-            f.write(code)
+            f.write(data)
         return path
 
     def _check_conditions(self):
