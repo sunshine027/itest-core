@@ -1,0 +1,12 @@
+<testcase>
+  <summary>This case has cdata fields</summary>
+  <setup><![CDATA[
+  echo setup
+]]></setup>
+  <steps><![CDATA[
+  echo steps
+]]></steps>
+  <teardown><![CDATA[
+  echo teardown
+]]></teardown>
+</testcase>

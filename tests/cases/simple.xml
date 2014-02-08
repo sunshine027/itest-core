@@ -1,0 +1,9 @@
+<testcase>
+  <summary>
+  A very simple case. It only contains
+  a summary field and a simple step
+  </summary>
+  <steps>
+  echo hello simple
+  </steps>
+</testcase>

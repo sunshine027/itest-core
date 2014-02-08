@@ -1,0 +1,12 @@
+<testcase>
+  <summary>If `qa` takes effect, case will pass,
+  otherwise case will exit with non-zero.
+  </summary>
+  <qa>
+    <prompt>How are you ?</prompt>
+    <answer>Good !</answer>
+  </qa>
+  <steps>
+  read -t 0.75 -p "How are you ? " GREETING
+  </steps>
+</testcase>
