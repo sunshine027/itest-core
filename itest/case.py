@@ -204,52 +204,14 @@ diff --unchanged-line-format= --old-line-format= --new-line-format='%%L' \\
 if [ -f %(var_out)s ]; then
     . %(var_out)s
 fi
-%(coverage)s
 set -o pipefail
 set -ex
 %(steps)s
 ''' % {'rundir': self.rundir,
-       'coverage': self._make_coverage_code(),
        'var_out': os.path.join(self.meta, 'var.out'),
        'steps': self.steps,
        }
         return self._make_code('steps', code)
-
-    def _make_coverage_code(self):
-        if not settings.ENABLE_COVERAGE or \
-                not settings.env_root or \
-                not settings.TARGET_NAME:
-            return ''
-
-        rcfile = os.path.join(settings.env_root, settings.COVERAGE_RCFILE)
-        if os.path.exists(rcfile):
-            opts = '--rcfile %s' % rcfile
-        else:
-            opts = ''
-
-        target = settings.TARGET_NAME
-        coverage_file = os.path.join(os.path.dirname(self.logname), '.coverage')
-
-        code = '''
-__ITEST_ORIG_TARGET__=$(which %(target)s)
-shopt -s expand_aliases
-coverage=$(which python-coverage 2>/dev/null || which coverage)
-runsudo()
-{
-if [ $1 == %(target)s ]; then
-shift
-sudo COVERAGE_FILE=%(coverage_file)s $coverage run -p %(opts)s $(which %(target)s) "$@" && set -o pipefail
-else
-sudo "$@" && set -o pipefail
-fi
-}
-alias sudo=runsudo
-alias %(target)s='COVERAGE_FILE=%(coverage_file)s $coverage run -p %(opts)s '$__ITEST_ORIG_TARGET__
-''' % {'target': target,
-       'coverage_file': coverage_file,
-       'opts': opts,
-       }
-        return code
 
     def _make_teardown_script(self):
         if not self.teardown:

@@ -80,9 +80,8 @@ def parse_args():
         help='print debug information')
     parser.add_argument('--set', type=setting_arg_type, action='append',
         help='overwrite settings in runtime, format like xx=yy. Be careful '
-        'that this option sets the configuration item into given value which '
-        'is always type string. So setting ENABLE_COVERAGE=0 may be the same '
-        'as setting ENABLE_COVERAGE=1')
+        'that this option sets the configuration item into given value whos '
+        'type is always string. So setting FOO=0 is the same as FOO=1')
     parser.add_argument('-t', '--tag', type=str.lower, action='append',
         default=[], help='attach tag which can be used as search keyword')
     parser.add_argument('--test-project-path',

@@ -46,13 +46,6 @@ DEPENDENCIES = []
 SUDO_PASSWD = os.environ.get('ITEST_SUDO_PASSWD')
 
 
-# Enable python-coverage report
-ENABLE_COVERAGE = False
-
-# Customized python-coverage rcfile
-COVERAGE_RCFILE = 'coveragerc'
-
-
 # Timeout(in seconds) for running a single case
 RUN_CASE_TIMEOUT = 30 * 60 # half an hour
 
