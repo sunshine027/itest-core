@@ -5,3 +5,5 @@ build/
 dist/
 packaging/itest-core*.tar.gz
 packaging/.osc/
+.tox/
+.python-version
