@@ -1,0 +1,4 @@
+<testcase>
+  <summary>it should be treated as failure</summary>
+  <steps>false</steps>
+</testcase>
