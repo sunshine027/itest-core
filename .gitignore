@@ -8,3 +8,4 @@ packaging/.osc/
 .tox/
 .python-version
 itests.xml
+xunit.xml

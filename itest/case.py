@@ -6,6 +6,8 @@ import uuid
 import shutil
 import logging
 
+import unittest2 as unittest
+from unittest2 import SkipTest
 from jinja2 import Environment, FileSystemLoader
 import pexpect
 if hasattr(pexpect, 'spawnb'): # pexpect-u-2.5
@@ -16,15 +18,12 @@ else:
 from itest.conf import settings
 from itest.utils import now, cd, get_machine_labels, makedirs
 
-try:
-    # 2.7
-    from unittest.case import SkipTest
-except ImportError:
-    # 2.6 and below
-    class SkipTest(Exception):
-        """Raise this exception to mark a test as skipped.
-        """
-        pass
+
+def id_split(idstring):
+    parts = idstring.split('.')
+    if len(parts) > 1:
+        return '.'.join(parts[:-1]), parts[-1]
+    return '', idstring
 
 
 class TimeoutError(Exception):
@@ -131,10 +130,9 @@ class Meta(object):
 
     meta = '.meta'
 
-    def __init__(self, rundir, test, verbose):
+    def __init__(self, rundir, test):
         self.rundir = rundir
         self.test = test
-        self.verbose = verbose
 
         self.logname = None
         self.logfile = None
@@ -150,7 +148,7 @@ class Meta(object):
 
         self.logname = os.path.join(self.rundir, self.meta, 'log')
         self.logfile = open(self.logname, 'a')
-        if self.verbose > 1:
+        if settings.verbosity >= 3:
             self.logfile = Tee(self.logfile)
 
         if self.test.setup:
@@ -262,85 +260,86 @@ set -x
             return -1
 
 
-class TestCase(object):
+class TestCase(unittest.TestCase):
     '''Single test case'''
 
     count = 1
     was_skipped = False
     was_successful = False
 
-    def __init__(self, fname, summary, steps,
-                 setup='', teardown='',
-                 qa=(), issue=None,
-                 precondition='', tag='', version='',
-                 conditions=None, fixtures=None,
-                 ):
-        self.version = version
-        self.filename = fname
-        self.summary = summary
-        self.steps = steps
+    def __init__(self, filename, fields):
+        super(TestCase, self).__init__()
+        self.filename = filename
 
-        self.setup = setup
-        self.teardown = teardown
-
-        self.qa = qa
-        self.issue = issue if issue else {}
-        self.conditions = conditions or {}
-        self.fixtures = fixtures or ()
+        # Fields from case definition
+        self.version = fields.get('version')
+        self.summary = fields.get('summary')
+        self.steps = fields.get('steps')
+        self.setup = fields.get('steup')
+        self.teardown = fields.get('teardown')
+        self.qa = fields.get('qa', ())
+        self.issue = fields.get('issue', {})
+        self.conditions = fields.get('conditions', {})
+        self.fixtures = fields.get('fixtures', ())
 
         self.component = self._guess_component(self.filename)
-        #TODO: need a more reasonable and meaningful id rather than this
-        self.id = hash(self)
-        self.start_time = None
 
-    def __hash__(self):
-        return hash(self.filename)
+    def id(self):
+        """
+        This id attribute is used in xunit file.
+
+        classname.name
+        """
+        if settings.env_root:
+            retpath = self.filename[len(settings.cases_dir):].lstrip(os.path.sep)
+            base = os.path.splitext(retpath)[0]
+        else:
+            base = os.path.splitext(os.path.basename(self.filename))[0]
+        return base.replace(os.path.sep, '.')
 
     def __eq__(self, that):
-        return hash(self) == hash(that)
+        if type(self) is not type(that):
+            return NotImplemented
+        return self.id() == that.id()
 
-    def run(self, result, verbose):
-        result.test_start(self)
-        meta = None
-        try:
-            self._check_conditions()
-            rundir = self._new_rundir()
-            self._copy_fixtures(rundir)
+    def __hash__(self):
+        return hash((type(self), self.filename))
 
-            meta = Meta(rundir, self, verbose)
-            with cd(rundir):
-                meta.begin()
-                self.rundir = meta.rundir
-                self.logname = meta.logname
-                meta.log('case start to run!')
-                if self.setup:
-                    meta.setup()
-                try:
-                    exit_status = meta.steps()
-                finally:
-                    # make sure to call tearDown if setUp success
-                    meta.teardown()
-                    meta.log('case is finished!')
-        except SkipTest as err:
-            result.add_skipped(self, err)
-        except KeyboardInterrupt:
-            # mark case as failure if it is broke by ^C
-            result.add_failure(self)
-            raise
-        except:
-            # catch all exceptions and log it, no need to throw it out
-            result.add_exception(self, sys.exc_info())
-            # FIXME: add_error not add_exception
-        else:
-            if exit_status == 0:
-                result.add_success(self)
-            else:
-                result.add_failure(self)
-        finally:
-            # make sure to call test_stop if test_start is called
-            result.test_stop(self)
-            if meta:
-                meta.end()
+    def __str__(self):
+        cls, name = id_split(self.id())
+        if cls:
+            return "%s (%s)" % (name, cls)
+        return name
+
+    def __repr__(self):
+        return '<%s %s>' % (self.__class__.__name__, self.id())
+
+    def setUp(self):
+        self._check_conditions()
+        self.rundir = rundir = self._new_rundir()
+        self._copy_fixtures()
+
+        self.meta = meta = Meta(rundir, self)
+        with cd(rundir):
+            meta.begin()
+            meta.log('case start to run!')
+            if self.setup:
+                meta.setup()
+
+    def tearDown(self):
+        meta = self.meta
+        if meta:
+            meta.teardown()
+            meta.log('case is finished!')
+            meta.end()
+
+    def runTest(self):
+        meta = self.meta
+        with cd(self.rundir):
+            code = meta.steps()
+
+        msg = "Nonzero exitcode. See log: %s" % self.meta.logname
+        self.assertEqual(0, code, msg)
 
     def _check_conditions(self):
         '''Check if conditions match, raise SkipTest if some conditions are
@@ -376,7 +375,8 @@ class TestCase(object):
         os.mkdir(path)
         return path
 
-    def _copy_fixtures(self, todir):
+    def _copy_fixtures(self):
+        todir = self.rundir
         if self.version != 'xml1.0' and settings.fixtures_dir:
             return self._copy_all_fixtures(todir)
 

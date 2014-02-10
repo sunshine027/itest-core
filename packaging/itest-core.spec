@@ -28,6 +28,7 @@ Requires:   python-argparse
 %endif
 
 Requires: python-jinja2
+Requires: python-unittest2
 
 BuildRequires: python-setuptools
 BuildRequires: python-devel

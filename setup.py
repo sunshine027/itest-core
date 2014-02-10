@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-"Setup"
 from setuptools import setup
 
 from itest import __version__
@@ -13,6 +12,7 @@ setup(name='itest',
       'dawei.yang@intel.com, hao.h.huang@intel.com, junchunx.guan@intel.com',
       license='GPLv2',
       platforms=['Linux'],
+      include_package_data=True,
       packages=['itest', 'itest.conf', 'imgdiff', 'spm'],
       package_data={'': ['*.html']},
       scripts=[

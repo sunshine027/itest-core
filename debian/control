@@ -10,5 +10,5 @@ Homepage: http://www.tizen.org
 Package: itest-core
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends},
- python-pexpect, python-coverage, python-jinja2
+ python-pexpect, python-coverage, python-jinja2, python-unittest2
 Description: functional test framework for gbs and mic

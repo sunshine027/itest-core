@@ -1,11 +1,12 @@
 import os
 import re
+
+import unittest2 as unittest
 from jinja2 import Environment, FileSystemLoader
 
 from itest import xmlparser
 from itest.conf import settings
 from itest.case import TestCase
-from itest.suite import TestSuite
 
 
 class BaseParser(object):
@@ -169,28 +170,24 @@ class CaseParser(BaseParser):
         return cond
 
 
-class TestLoader(object):
+class TestLoader(unittest.TestLoader):
 
-    def load_args(self, args):
-        '''
-        Load tests from command arguments
-        '''
-        if not args and settings.env_root:
+    def loadTestsFromModule(self, _module, _use_load_tests=True):
+        if settings.env_root:
             return self.load(settings.env_root)
+        return self.suiteClass()
 
-        suite = TestSuite()
-        for arg in args:
-            suite.add_test(self.load(arg))
-        return suite
+    def loadTestsFromName(self, name, module=None):
+        return self.load(name)
 
     def load(self, sel):
         '''
         Load tests from a single test select pattern `sel`
         '''
         def _is_test(ret):
-            return isinstance(ret, TestSuite) or isinstance(ret, TestCase)
+            return isinstance(ret, self.suiteClass) or isinstance(ret, TestCase)
 
-        suite = TestSuite()
+        suite = self.suiteClass()
         stack = [sel]
 
         while stack:
@@ -204,7 +201,7 @@ class TestLoader(object):
                     continue
 
                 if _is_test(ret):
-                    suite.add_test(ret)
+                    suite.addTest(ret)
                 elif isinstance(ret, list):
                     stack.extend(ret)
                 else:
@@ -250,7 +247,7 @@ class FilePattern(object):
         else:
             data = CaseParser().parse(text)
 
-        return TestCase(os.path.abspath(name), **data)
+        return TestCase(os.path.abspath(name), data)
 
 
 class DirPattern(object):
@@ -329,7 +326,7 @@ class IntersectionPattern(object):
         many = [ loader.load(part)
                 for part in sel.split('&&') ]
 
-        return TestSuite(intersection(many))
+        return loader.suiteClass(intersection(many))
 
 
 class _SuitePatternRegister(object):
