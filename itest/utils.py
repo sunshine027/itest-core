@@ -75,22 +75,6 @@ def _check_output(*popenargs, **kwargs):
     process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
     return process.communicate()[0]
 
-
-def calculate_directory_size(path):
-    '''Calculate disk space occupied given path and all sub-dirs.
-
-    Return a string of size in a human readable format (e.g., 1K 234M 2G);
-    Return None when given path does not exist.
-    '''
-    cmd = ['du', '-sh', path]
-
-    try:
-        output = _check_output(cmd)
-    except (subprocess.CalledProcessError, OSError) as err:
-        logging.warn('%s: %s' % (err, ' '.join(cmd)))
-        return None
-    return output.split()[0]
-
 @contextmanager
 def cd(path):
     '''cd to given path and get back when it finish

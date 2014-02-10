@@ -13,19 +13,19 @@ class TextTestRunner(object):
     def __init__(self, verbose):
         self.verbose = verbose
 
-    def _make_result(self, space):
-        return self.result_class(space, self.verbose)
+    def _make_result(self):
+        return self.result_class(self.verbose)
 
-    def run(self, test, space):
+    def run(self, test):
         print 'plan to run %d test%s' % (test.count, 's' if test.count > 1 else '')
 
-        result = self._make_result(space)
+        result = self._make_result()
         register_result(result)
 
         start_time = time.time()
-        result.runner_start(test, space)
+        result.runner_start(test)
         try:
-            test.run(result, space, self.verbose)
+            test.run(result, self.verbose)
         except KeyboardInterrupt:
             result.stop(KeyboardInterrupt.__name__)
         except:

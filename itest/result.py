@@ -4,6 +4,9 @@ import time
 import datetime
 import traceback
 
+from itest.conf import settings
+from itest.utils import makedirs
+
 
 class TestResult(object):
 
@@ -23,8 +26,7 @@ class TestResult(object):
     # seq number for current running test case
     current_no = 0
 
-    def __init__(self, space, verbose=0):
-        self.space = space
+    def __init__(self, verbose=0):
         self.verbose = verbose
 
     def test_start(self, test):
@@ -38,7 +40,7 @@ class TestResult(object):
         test.cost_time = now - test.start_time
         test.cost_time_from_beginning = now - self.start_time
 
-    def runner_start(self, _test, _space):
+    def runner_start(self, _test):
         '''test runner start'''
         self.start_time = time.time()
 
@@ -184,7 +186,8 @@ class XunitTestResult(TextTestResult):
         xml.append('</testsuite>')
         xml = '\n'.join(xml)
 
-        filename = os.path.join(self.space.logdir, self.xunit_file)
+        makedirs(os.path.join(settings.WORKSPACE, 'logs'))
+        filename = os.path.join(settings.WORKSPACE, 'logs', self.xunit_file)
         with open(filename, 'w') as fp:
             fp.write(xml)
 

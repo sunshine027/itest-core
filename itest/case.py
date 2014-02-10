@@ -2,8 +2,11 @@
 import os
 import sys
 import time
+import uuid
+import shutil
 import logging
 
+from jinja2 import Environment, FileSystemLoader
 import pexpect
 if hasattr(pexpect, 'spawnb'): # pexpect-u-2.5
     spawn = pexpect.spawnb
@@ -11,7 +14,7 @@ else:
     spawn = pexpect.spawn
 
 from itest.conf import settings
-from itest.utils import now, cd, get_machine_labels
+from itest.utils import now, cd, get_machine_labels, makedirs
 
 try:
     # 2.7
@@ -118,10 +121,150 @@ class Tee(object):
         self.original.close()
 
 
+class Meta(object):
+    """
+    Meta information of a test case
+
+    All meta information are put in a .meta/ directory under case running
+    path. Scripts `setup`, `steps` and `teardown` are in this meta path.
+    """
+
+    meta = '.meta'
+
+    def __init__(self, rundir, test, verbose):
+        self.rundir = rundir
+        self.test = test
+        self.verbose = verbose
+
+        self.logname = None
+        self.logfile = None
+        self.setup_script = None
+        self.steps_script = None
+        self.teardown_script = None
+
+    def begin(self):
+        """
+        Begin to run test. Generate meta scripts and open log file.
+        """
+        os.mkdir(self.meta)
+
+        self.logname = os.path.join(self.rundir, self.meta, 'log')
+        self.logfile = open(self.logname, 'a')
+        if self.verbose > 1:
+            self.logfile = Tee(self.logfile)
+
+        if self.test.setup:
+            self.setup_script =  self._make_setup_script()
+        self.steps_script = self._make_steps_script()
+        if self.test.teardown:
+            self.teardown_script = self._make_teardown_script()
+
+    def end(self):
+        """
+        Test finished, do some cleanup.
+        """
+        if not self.logfile:
+            return
+
+        self.logfile.close()
+
+        #delete color code
+        os.system("sed -i 's/\x1b\[[0-9]*m//g' %s" % self.logname)
+        os.system("sed -i 's/\x1b\[[0-9]*K//g' %s" % self.logname)
+
+        self.logfile = None
+
+    def setup(self):
+        if self.setup_script:
+            self.log('setup start')
+            self._psh(self.setup_script)
+            self.log('setup finish')
+
+    def steps(self):
+        self.log('steps start')
+        retu = self._psh(self.steps_script, self.test.qa)
+        self.log('steps finish')
+        return retu
+
+    def teardown(self):
+        if self.teardown_script:
+            self.log('teardown start')
+            self._psh(self.teardown_script)
+            self.log('teardown finish')
+
+    def log(self, msg, level="INFO"):
+        self.logfile.write('%s %s: %s\n' % (now(), level, msg))
+
+    def _make_setup_script(self):
+        code = '''cd %(rundir)s
+(set -o posix; set) > %(var_old)s
+set -x
+%(setup)s
+set +x
+(set -o posix; set) > %(var_new)s
+diff --unchanged-line-format= --old-line-format= --new-line-format='%%L' \\
+    %(var_old)s %(var_new)s > %(var_out)s
+''' % {'rundir': self.rundir,
+       'var_old': os.path.join(self.meta, 'var.old'),
+       'var_new': os.path.join(self.meta, 'var.new'),
+       'var_out': os.path.join(self.meta, 'var.out'),
+       'setup': self.test.setup,
+       }
+        return self._make_code('setup', code)
+
+    def _make_steps_script(self):
+        code = '''cd %(rundir)s
+if [ -f %(var_out)s ]; then
+    . %(var_out)s
+fi
+set -o pipefail
+set -ex
+%(steps)s
+''' % {'rundir': self.rundir,
+       'var_out': os.path.join(self.meta, 'var.out'),
+       'steps': self.test.steps,
+       }
+        return self._make_code('steps', code)
+
+    def _make_teardown_script(self):
+        code = '''cd %(rundir)s
+if [ -f %(var_out)s ]; then
+    . %(var_out)s
+fi
+set -x
+%(teardown)s
+''' % {'rundir': self.rundir,
+       'var_out': os.path.join(self.meta, 'var.out'),
+       'teardown': self.test.teardown,
+       }
+        return self._make_code('teardown', code)
+
+    def _make_code(self, name, code):
+        """Write `code` into `name`"""
+        path = os.path.join(self.meta, name)
+        data = code.encode('utf8') if isinstance(code, unicode) else code
+        with open(path, 'w') as f:
+            f.write(data)
+        return path
+
+    def _psh(self, script, more_expecting=()):
+        expecting = [(SUDO_PASS_PROMPT_PATTERN, settings.SUDO_PASSWD)] + list(more_expecting)
+        try:
+            return pcall('/bin/bash',
+                         [script],
+                         expecting=expecting,
+                         output=self.logfile,
+                         eof_timeout=float(settings.RUN_CASE_TIMEOUT),
+                         output_timeout=float(settings.HANGING_TIMEOUT),
+                         )
+        except Exception as err:
+            self.log('pcall error:%s\n%s' % (script, err), 'ERROR')
+            return -1
+
+
 class TestCase(object):
     '''Single test case'''
 
-    meta = '.meta'
     count = 1
     was_skipped = False
     was_successful = False
@@ -145,18 +288,10 @@ class TestCase(object):
         self.conditions = conditions or {}
         self.fixtures = fixtures or ()
 
-        self.component = self.guess_component(self.filename)
+        self.component = self._guess_component(self.filename)
         #TODO: need a more reasonable and meaningful id rather than this
         self.id = hash(self)
         self.start_time = None
-        self.logname = None
-        self.logfile = None
-        self.rundir = None
-
-        self.steps_script = None
-        self.setup_script = None
-        self.teardown_script = None
-        self.vars_script = None
 
     def __hash__(self):
         return hash(self.filename)
@@ -164,123 +299,28 @@ class TestCase(object):
     def __eq__(self, that):
         return hash(self) == hash(that)
 
-    def guess_component(self, filename):
-        # assert that filename is absolute path
-        if not settings.env_root or not filename.startswith(settings.cases_dir):
-            return 'unknown'
-        relative = filename[len(settings.cases_dir)+1:].split(os.sep)
-        # >1 means [0] is an dir name
-        return relative[0] if len(relative) > 1 else 'unknown'
-
-    def _make_scripts(self):
-        '''Make shell script of setup, teardown, steps
-        '''
-        self.setup_script =  self._make_setup_script()
-        self.steps_script = self._make_steps_script()
-        self.teardown_script = self._make_teardown_script()
-
-    def _make_setup_script(self):
-        if not self.setup:
-            return
-
-        code = '''cd %(rundir)s
-(set -o posix; set) > %(var_old)s
-set -x
-%(setup)s
-set +x
-(set -o posix; set) > %(var_new)s
-diff --unchanged-line-format= --old-line-format= --new-line-format='%%L' \\
-    %(var_old)s %(var_new)s > %(var_out)s
-''' % {'rundir': self.rundir,
-       'var_old': os.path.join(self.meta, 'var.old'),
-       'var_new': os.path.join(self.meta, 'var.new'),
-       'var_out': os.path.join(self.meta, 'var.out'),
-       'setup': self.setup,
-       }
-        return self._make_code('setup', code)
-
-    def _make_steps_script(self):
-        code = '''cd %(rundir)s
-if [ -f %(var_out)s ]; then
-    . %(var_out)s
-fi
-set -o pipefail
-set -ex
-%(steps)s
-''' % {'rundir': self.rundir,
-       'var_out': os.path.join(self.meta, 'var.out'),
-       'steps': self.steps,
-       }
-        return self._make_code('steps', code)
-
-    def _make_teardown_script(self):
-        if not self.teardown:
-            return
-
-        code = '''cd %(rundir)s
-if [ -f %(var_out)s ]; then
-    . %(var_out)s
-fi
-set -x
-%(teardown)s
-''' % {'rundir': self.rundir,
-       'var_out': os.path.join(self.meta, 'var.out'),
-       'teardown': self.teardown,
-       }
-        return self._make_code('teardown', code)
-
-    def _setup(self):
-        if self.setup_script:
-            self._log('INFO: setup start')
-            self._psh(self.setup_script)
-            self._log('INFO: setup finish')
-
-    def _steps(self):
-        self._log('INFO: steps start')
-        retu = self._psh(self.steps_script, self.qa)
-        self._log('INFO: steps finish')
-        return retu
-
-    def _teardown(self):
-        if self.teardown_script:
-            self._log('INFO: teardown start')
-            self._psh(self.teardown_script)
-            self._log('INFO: teardown finish')
-
-    def _psh(self, script, more_expecting=()):
-        expecting = [(SUDO_PASS_PROMPT_PATTERN, settings.SUDO_PASSWD)] + list(more_expecting)
-        try:
-            return pcall('/bin/bash',
-                         [script],
-                         expecting=expecting,
-                         output=self.logfile,
-                         eof_timeout=float(settings.RUN_CASE_TIMEOUT),
-                         output_timeout=float(settings.HANGING_TIMEOUT),
-                         )
-        except Exception as err:
-            self._log('ERROR: pcall error:%s\n%s' % (script, err))
-            return -1
-
-    def run(self, result, space, verbose):
+    def run(self, result, verbose):
         result.test_start(self)
+        meta = None
         try:
             self._check_conditions()
-            # FIXME: make this self.rundir as local var
-            self.rundir = space.new_test_dir(self.version,
-                                             os.path.dirname(self.filename),
-                                             self.fixtures)
-            with cd(self.rundir):
-                os.mkdir(self.meta)
-                self._open_log(verbose)
-                self._make_scripts()
-                self._log('INFO: case start to run!')
-                self._setup()
+            rundir = self._new_rundir()
+            self._copy_fixtures(rundir)
+
+            meta = Meta(rundir, self, verbose)
+            with cd(rundir):
+                meta.begin()
+                self.rundir = meta.rundir
+                self.logname = meta.logname
+                meta.log('case start to run!')
+                if self.setup:
+                    meta.setup()
                 try:
-                    exit_status = self._steps()
+                    exit_status = meta.steps()
                 finally:
                     # make sure to call tearDown if setUp success
-                    self._teardown()
-                    self._log('INFO: case is finished!')
+                    meta.teardown()
+                    meta.log('case is finished!')
         except SkipTest as err:
             result.add_skipped(self, err)
         except KeyboardInterrupt:
@@ -299,29 +339,8 @@ set -x
         finally:
             # make sure to call test_stop if test_start is called
             result.test_stop(self)
-            if self.logfile:
-                self.logfile.close()
-                self.delete_color_code_in_log_file(self.logname)
-
-    def _open_log(self, verbose):
-        self.logname = os.path.join(self.rundir, self.meta, 'log')
-        self.logfile = open(self.logname, 'a')
-        if verbose > 1:
-            self.logfile = Tee(self.logfile)
-
-    def _log(self, msg):
-        self.logfile.write('%s [itest] %s\n' % (now(), msg))
-
-    def delete_color_code_in_log_file(self, fname):
-        os.system("sed -i 's/\x1b\[[0-9]*m//g' %s" % fname)
-        os.system("sed -i 's/\x1b\[[0-9]*K//g' %s" % fname)
-
-    def _make_code(self, name, code):
-        path = os.path.join(self.meta, name)
-        data = code.encode('utf8') if isinstance(code, unicode) else code
-        with open(path, 'w') as f:
-            f.write(data)
-        return path
+            if meta:
+                meta.end()
 
     def _check_conditions(self):
         '''Check if conditions match, raise SkipTest if some conditions are
@@ -342,3 +361,78 @@ set -x
             if not intersection:
                 raise SkipTest('not in distribution whitelist:%s' %
                                ','.join(self.conditions[kw]))
+
+    def _guess_component(self, filename):
+        # assert that filename is absolute path
+        if not settings.env_root or not filename.startswith(settings.cases_dir):
+            return 'unknown'
+        relative = filename[len(settings.cases_dir)+1:].split(os.sep)
+        # >1 means [0] is an dir name
+        return relative[0] if len(relative) > 1 else 'unknown'
+
+    def _new_rundir(self):
+        hash_ = str(uuid.uuid4()).replace('-', '')
+        path = os.path.join(settings.WORKSPACE, hash_)
+        os.mkdir(path)
+        return path
+
+    def _copy_fixtures(self, todir):
+        if self.version != 'xml1.0' and settings.fixtures_dir:
+            return self._copy_all_fixtures(todir)
+
+        def _copy(source, target):
+            makedirs(os.path.dirname(target))
+            if os.path.isdir(source):
+                shutil.copytree(source, target)
+            else:
+                shutil.copy(source, target)
+
+        def _template(source, target):
+            template_dirs = [os.path.abspath(os.path.dirname(source))]
+            if settings.fixtures_dir:
+                template_dirs.append(settings.fixtures_dir)
+            jinja2_env = Environment(loader=FileSystemLoader(template_dirs))
+            template = jinja2_env.get_template(os.path.basename(source))
+            text = template.render()
+
+            makedirs(os.path.dirname(target))
+            with open(target, 'w') as writer:
+                writer.write(text)
+
+        def _write(text, target):
+            makedirs(os.path.dirname(target))
+            with open(target, 'w') as writer:
+                writer.write(text)
+
+        casedir = os.path.dirname(self.filename)
+        for item in self.fixtures:
+            if 'src' in item and item['src']:
+                source = os.path.join(casedir, item['src'])
+                if not os.path.exists(source) and settings.fixtures_dir:
+                    source = os.path.join(settings.fixtures_dir, item['src'])
+            elif item['type'] != 'content':
+                raise Exception("Attribute src can't be found")
+
+            if 'target' in item and item['target']:
+                target = os.path.join(todir, item['target'])
+            else:
+                target = os.path.join(todir, os.path.basename(source))
+
+            if item['type'] == 'copy':
+                _copy(source, target)
+            elif item['type'] == 'template':
+                _template(source, target)
+            elif item['type'] == 'content':
+                _write(item['text'], target)
+            else:
+                raise Exception("Unknown fixture type: %s" % item['type'])
+
+    def _copy_all_fixtures(self, todir):
+        for name in os.listdir(settings.fixtures_dir):
+            source = os.path.join(settings.fixtures_dir, name)
+            target = os.path.join(todir, name)
+
+            if os.path.isdir(source):
+                shutil.copytree(source, target)
+            else:
+                shutil.copy(source, target)

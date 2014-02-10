@@ -9,11 +9,10 @@ from argparse import ArgumentParser, ArgumentError
 
 from itest import __version__
 from itest.conf import settings, ENVIRONMENT_VARIABLE
-from itest.space import TestSpace
 from itest.loader import TestLoader
 from itest.runner import TextTestRunner
 from itest.signals import install_handler
-
+from itest.utils import makedirs
 
 def run_test(args):
     loader = TestLoader()
@@ -22,10 +21,7 @@ def run_test(args):
         print 'No case found'
         return
 
-    space = TestSpace(settings.WORKSPACE)
-    space.setup(suite)
-
-    result = TextTestRunner(args.verbose).run(suite, space)
+    result = TextTestRunner(args.verbose).run(suite)
     return result.was_successful
 
 
@@ -87,6 +83,8 @@ def parse_args():
     parser.add_argument('--test-project-path',
         default=os.environ.get(ENVIRONMENT_VARIABLE),
         help='set test project path under which there must be settings.py')
+    parser.add_argument('--test-workspace', type=os.path.abspath,
+        help='set test workspace path')
 
     return parser.parse_args()
 
@@ -101,6 +99,10 @@ def main():
         args.test_project_path = find_test_project_from_cwd()
     if args.test_project_path:
         os.environ[ENVIRONMENT_VARIABLE] = args.test_project_path
+
+    if args.test_workspace:
+        settings.WORKSPACE = args.test_workspace
+    makedirs(settings.WORKSPACE)
 
     if not args.debug:
         logging.getLogger().setLevel(logging.INFO)
