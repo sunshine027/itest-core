@@ -5,35 +5,12 @@ import subprocess
 from itest.utils import cd
 
 
-CASES_PATH = os.path.join(os.path.dirname(__file__), 'cases')
+SELF_PATH = os.path.dirname(__file__)
+CASES_PATH = os.path.join(SELF_PATH, 'cases')
 
-class RealCaseTest(unittest.TestCase):
-    """
-    Test methods will be loaded at runtime
-    """
-
-    def test_with_xunit(self):
-        with cd(CASES_PATH):
-            os.system("rm -f xunit.xml")
-            os.system("runtest --with-xunit simple.xml")
-            self.assertEqual(0, os.system("ls xunit.xml"))
-
-    def test_without_xunit(self):
-        with cd(CASES_PATH):
-            os.system("rm -f xunit.xml")
-            os.system("runtest simple.xml")
-            self.assertNotEquals(0, os.system("ls xunit.xml"))
-
-    def test_xunit_file(self):
-        with cd(CASES_PATH):
-            os.system("rm -r xunit.xml xunit2.xml")
-            os.system("runtest --with-xunit --xunit-file=xunit2.xml simple.xml")
-            self.assertEquals(0, os.system("ls xunit2.xml"))
-
-
-def _popen(cmd):
-    proc = subprocess.Popen(cmd,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def _run(cmd, **kw):
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, **kw)
     stdout, stderr = proc.communicate()
     msg = """Exit code %s != 0.
 STDOUT:
@@ -42,10 +19,39 @@ STDERR:
 %s""" % (proc.returncode, stdout, stderr)
     return proc.returncode, msg
 
+
+class RealCaseTest(unittest.TestCase):
+    """
+    Test methods will be loaded at runtime
+    """
+
+    def test_with_xunit(self):
+        with cd(CASES_PATH):
+            _run(["rm", "-f", "xunit.xml"])
+            _run(["runtest", "--with-xunit", "simple.xml"])
+            self.assertEqual(0, _run(["ls", "xunit.xml"])[0])
+
+    def test_without_xunit(self):
+        with cd(CASES_PATH):
+            _run(["rm", "-f", "xunit.xml"])
+            _run(["runtest", "simple.xml"])
+            self.assertNotEquals(0, _run(["ls", "xunit.xml"])[0])
+
+    def test_xunit_file(self):
+        with cd(CASES_PATH):
+            _run(["rm", "-r", "xunit.xml", "xunit2.xml"])
+            _run(["runtest", "--with-xunit", "--xunit-file=xunit2.xml", "simple.xml"])
+            self.assertEquals(0, _run(["ls", "xunit2.xml"])[0])
+
+    def tearDown(self):
+        with cd(SELF_PATH):
+            _run(["find", ".", "-regex", ".*/xunit.?.xml$", "-delete"])
+
+
 def _create_test(case_names, expect_pass=True, method_name=None):
     def test(self):
         with cd(CASES_PATH):
-            ret, msg = _popen(["runtest", "-vv"] + case_names)
+            ret, msg = _run(["runtest", "-vv"] + case_names)
         if expect_pass:
             self.assertEqual(0, ret, msg)
         else:
@@ -57,10 +63,10 @@ def _create_test(case_names, expect_pass=True, method_name=None):
     setattr(RealCaseTest, method_name, test)
 
 def _create_test_in_tproj(name):
-    path = os.path.join(os.path.dirname(__file__), 'tproj', 'cases')
+    path = os.path.join(SELF_PATH, 'tproj', 'cases')
     def test(self):
         with cd(path):
-            ret, msg = _popen(["runtest", "-vv", name])
+            ret, msg = _run(["runtest", "-vv", name])
         self.assertEquals(0, ret, msg)
 
     funcname = 'test_tproj_%s' % name.replace('.', '_')
