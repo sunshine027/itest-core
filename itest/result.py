@@ -183,6 +183,5 @@ class XunitTestResult(TextTestResult):
         xml.append('</testsuite>')
         xml = '\n'.join(xml)
 
-        if os.access(os.getcwd(), os.W_OK):
-            with open(self.xunit_file, 'w') as fp:
-                fp.write(xml)
+        with open(self.xunit_file, 'w') as fp:
+            fp.write(xml)
