@@ -67,6 +67,22 @@ def upgrade_parser(parser):
     return parser
 
 
+@subparser
+def version_parser(parser):
+    """query package version
+    Example:
+        $ spm version gbs
+    """
+    parser.add_argument('pkg', help='package name')
+
+    def handler(args):
+        distro = core.distro
+        print distro.check_version(args.pkg)
+
+    parser.set_defaults(handler=handler)
+    return parser
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog='spm',
