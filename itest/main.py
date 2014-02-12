@@ -21,7 +21,13 @@ def run_test(args):
         print 'No case found'
         return
 
-    result = TextTestRunner(args.verbose).run(suite)
+    runner = TextTestRunner(args.verbose)
+    if args.with_xunit:
+        from itest.result import XunitTestResult
+        runner.result_class = XunitTestResult
+        runner.result_class.xunit_file = args.xunit_file
+
+    result = runner.run(suite)
     return result.was_successful
 
 
@@ -85,6 +91,12 @@ def parse_args():
         help='set test project path under which there must be settings.py')
     parser.add_argument('--test-workspace', type=os.path.abspath,
         help='set test workspace path')
+    parser.add_argument('--with-xunit', action='store_true',
+        help='provides test resutls in standard XUnit XML format')
+    parser.add_argument('--xunit-file',
+        type=os.path.abspath, default='xunit.xml',
+        help='Path to xml file to store the xunit report in. Default'
+             'is xunit.xml in the working directory')
 
     return parser.parse_args()
 
@@ -103,6 +115,11 @@ def main():
     if args.test_workspace:
         settings.WORKSPACE = args.test_workspace
     makedirs(settings.WORKSPACE)
+
+    if args.with_xunit and \
+            not os.access(os.path.dirname(args.xunit_file), os.W_OK):
+        print >> sys.stderr, "Permission denied:", args.xunit_file
+        sys.exit(1)
 
     if not args.debug:
         logging.getLogger().setLevel(logging.INFO)

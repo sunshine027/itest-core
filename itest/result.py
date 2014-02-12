@@ -4,9 +4,6 @@ import time
 import datetime
 import traceback
 
-from itest.conf import settings
-from itest.utils import makedirs
-
 
 class TestResult(object):
 
@@ -142,15 +139,15 @@ class TextTestResult(TestResult):
 
 class XunitTestResult(TextTestResult):
 
-    xunit_file = 'itests.xml'
+    xunit_file = 'xunit.xml'
 
     def print_summary(self):
         '''Generate Xunit report and print summary
         '''
         super(XunitTestResult, self).print_summary()
-        filename = self._make_report()
+        self._make_report()
         print
-        print 'xunit report generate at', filename
+        print 'xunit report generate at', self.xunit_file
 
     def _make_report(self):
         '''Make the xunit format of xml located in testspace.
@@ -186,16 +183,6 @@ class XunitTestResult(TextTestResult):
         xml.append('</testsuite>')
         xml = '\n'.join(xml)
 
-        makedirs(os.path.join(settings.WORKSPACE, 'logs'))
-        filename = os.path.join(settings.WORKSPACE, 'logs', self.xunit_file)
-        with open(filename, 'w') as fp:
-            fp.write(xml)
-
-        # Write a copy in current dir
-        # It's a short term solution to write 2 copies, after we change
-        # jenkins job to use the one in current dir, we can safely remove
-        # the one in test space's logs/ dir.
         if os.access(os.getcwd(), os.W_OK):
             with open(self.xunit_file, 'w') as fp:
                 fp.write(xml)
-        return filename

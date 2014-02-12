@@ -2,15 +2,37 @@ import os
 import unittest
 import subprocess
 
+from itest.utils import cd
+
+
+CASES_PATH = os.path.join(os.path.dirname(__file__), 'cases')
 
 class RealCaseTest(unittest.TestCase):
     """
     Test methods will be loaded at runtime
     """
 
+    def test_with_xunit(self):
+        with cd(CASES_PATH):
+            os.system("rm -f xunit.xml")
+            os.system("runtest --with-xunit simple.xml")
+            self.assertEqual(0, os.system("ls xunit.xml"))
+
+    def test_without_xunit(self):
+        with cd(CASES_PATH):
+            os.system("rm -f xunit.xml")
+            os.system("runtest simple.xml")
+            self.assertNotEquals(0, os.system("ls xunit.xml"))
+
+    def test_xunit_file(self):
+        with cd(CASES_PATH):
+            os.system("rm -r xunit.xml xunit2.xml")
+            os.system("runtest --with-xunit --xunit-file=xunit2.xml simple.xml")
+            self.assertEquals(0, os.system("ls xunit2.xml"))
+
 
 def _popen(cmd):
-    proc = subprocess.Popen(cmd, shell=True,
+    proc = subprocess.Popen(cmd,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     msg = """Exit code %s != 0.
@@ -21,28 +43,27 @@ STDERR:
     return proc.returncode, msg
 
 def _create_test(case_names, expect_pass=True, method_name=None):
-    path = os.path.join(os.path.dirname(__file__), 'cases')
-    if not method_name:
-        method_name = 'test_%s' % case_names[0].replace('.', '_')
-
     def test(self):
-        cmd = "cd %s; runtest -vv %s" % (path, ' '.join(case_names))
-        ret, msg = _popen(cmd)
+        with cd(CASES_PATH):
+            ret, msg = _popen(["runtest", "-vv"] + case_names)
         if expect_pass:
             self.assertEqual(0, ret, msg)
         else:
             self.assertNotEqual(0, ret, msg)
 
+    if not method_name:
+        method_name = 'test_%s' % case_names[0].replace('.', '_')
     test.__name__ = method_name
     setattr(RealCaseTest, method_name, test)
 
 def _create_test_in_tproj(name):
     path = os.path.join(os.path.dirname(__file__), 'tproj', 'cases')
-    funcname = 'test_tproj_%s' % name.replace('.', '_')
     def test(self):
-        cmd = "cd %s; runtest -vv %s" % (path, name)
-        ret, msg = _popen(cmd)
+        with cd(path):
+            ret, msg = _popen(["runtest", "-vv", name])
         self.assertEquals(0, ret, msg)
+
+    funcname = 'test_tproj_%s' % name.replace('.', '_')
     setattr(RealCaseTest, funcname, test)
 
 
