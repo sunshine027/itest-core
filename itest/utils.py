@@ -1,7 +1,6 @@
 # vim: ai ts=4 sts=4 et sw=4
 import os
 import re
-import logging
 import datetime
 import platform
 import subprocess
