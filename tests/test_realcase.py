@@ -1,6 +1,7 @@
 import os
 import unittest
 import subprocess
+import xml.etree.ElementTree as ET
 
 from itest.utils import cd
 
@@ -29,19 +30,27 @@ class RealCaseTest(unittest.TestCase):
         with cd(CASES_PATH):
             _run(["rm", "-f", "xunit.xml"])
             _run(["runtest", "--with-xunit", "simple.xml"])
-            self.assertEqual(0, _run(["ls", "xunit.xml"])[0])
+
+            # check whether xml is valid
+            ET.parse('xunit.xml')
 
     def test_without_xunit(self):
         with cd(CASES_PATH):
             _run(["rm", "-f", "xunit.xml"])
             _run(["runtest", "simple.xml"])
-            self.assertNotEquals(0, _run(["ls", "xunit.xml"])[0])
+            self.assertNotEqual(0, _run(["ls", "xunit.xml"])[0])
 
     def test_xunit_file(self):
         with cd(CASES_PATH):
             _run(["rm", "-r", "xunit.xml", "xunit2.xml"])
             _run(["runtest", "--with-xunit", "--xunit-file=xunit2.xml", "simple.xml"])
             self.assertEquals(0, _run(["ls", "xunit2.xml"])[0])
+
+    def test_xml_validation(self):
+        with cd(CASES_PATH):
+            _run(["rm", "-f", "xunit.xml"])
+            _run(["runtest", "--with-xunit", "simple_false.xml"])
+            ET.parse('xunit.xml')
 
     def tearDown(self):
         with cd(SELF_PATH):

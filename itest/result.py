@@ -1,8 +1,15 @@
 import time
 from unittest2 import TextTestResult
+from xml.sax import saxutils
 
 from itest.case import id_split
 
+
+def escape_string(string):
+    return saxutils.escape(string, {'"': '&quot;',
+                                    "'": '&apos;',
+                                    '\n': ' ',
+                                    })
 
 class XunitTestResult(TextTestResult):
 
@@ -50,7 +57,7 @@ class XunitTestResult(TextTestResult):
             {'cls': cls,
              'name': name,
              'taken': self._time_taken(),
-             'message': str(err),
+             'message': escape_string(str(err)),
              'log': open(test.meta.logname).read().replace('\r', '\n'),
              })
 
