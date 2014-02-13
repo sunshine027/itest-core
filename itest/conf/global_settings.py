@@ -47,10 +47,10 @@ SUDO_PASSWD = os.environ.get('ITEST_SUDO_PASSWD')
 
 
 # Timeout(in seconds) for running a single case
-RUN_CASE_TIMEOUT = 30 * 60 # half an hour
+RUN_CASE_TIMEOUT = 30 * 60  # half an hour
 
 # Timeout(in seconds) for no output
-HANGING_TIMEOUT = 5 * 60 # 5 minutes
+HANGING_TIMEOUT = 5 * 60  # 5 minutes
 
 # Time zone
 TZ = None
@@ -61,8 +61,9 @@ def _get_target_name():
     '''get runtime target name'''
     from itest.conf import settings
     return settings.TARGET_NAME
-    
+
+
 TAGS = [
-        lambda : time.strftime('%Y%m%d'), # Date
-        _get_target_name, # Target Name
+    lambda: time.strftime('%Y%m%d'),  # Date
+    _get_target_name,  # Target Name
     ]

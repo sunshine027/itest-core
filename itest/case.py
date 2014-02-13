@@ -1,4 +1,3 @@
-# vim: set sw=4 ts=4 ai et:
 import os
 import sys
 import time
@@ -10,7 +9,7 @@ import unittest2 as unittest
 from unittest2 import SkipTest
 from jinja2 import Environment, FileSystemLoader
 import pexpect
-if hasattr(pexpect, 'spawnb'): # pexpect-u-2.5
+if hasattr(pexpect, 'spawnb'):  # pexpect-u-2.5
     spawn = pexpect.spawnb
 else:
     spawn = pexpect.spawn
@@ -30,7 +29,8 @@ class TimeoutError(Exception):
     pass
 
 
-def pcall(cmd, args=(), expecting=(), output=None, eof_timeout=None, output_timeout=None, **spawn_opts):
+def pcall(cmd, args=(), expecting=(), output=None,
+          eof_timeout=None, output_timeout=None, **spawn_opts):
     '''call cmd with expecting
     expecting: list of pairs, first is expecting string, second is send string
     output: redirect cmd stdout and stderr to file object
@@ -39,10 +39,10 @@ def pcall(cmd, args=(), expecting=(), output=None, eof_timeout=None, output_time
     spawn_opts: keyword arguments passed to spawn call
     '''
     question = [pexpect.EOF, pexpect.TIMEOUT]
-    question.extend([ pair[0] for pair in expecting ])
+    question.extend([pair[0] for pair in expecting])
     if output_timeout:
         question.append(r'\r|\n')
-    answer = [None]*2 + [ i[1] for i in expecting ]
+    answer = [None]*2 + [i[1] for i in expecting]
 
     start = time.time()
     child = spawn(cmd, list(args), **spawn_opts)
@@ -60,9 +60,9 @@ def pcall(cmd, args=(), expecting=(), output=None, eof_timeout=None, output_time
                     raise TimeoutError(msg)
 
             i = child.expect(question, timeout=timeout)
-            if i == 0: # EOF
+            if i == 0:  # EOF
                 break
-            elif i == 1: # TIMEOUT
+            elif i == 1:  # TIMEOUT
                 if output_timeout:
                     msg = 'Hanging for %s seconds!:%s %s'
                 else:
@@ -89,7 +89,10 @@ def pcall(cmd, args=(), expecting=(), output=None, eof_timeout=None, output_time
 # itestuser23794's password:
 # u1110-32b
 # [sudo] password for itester:
-SUDO_PASS_PROMPT_PATTERN = '\[sudo\] password for .*?:|root\'s password:|.*?\'s password:'
+SUDO_PASS_PROMPT_PATTERN = "\[sudo\] password for .*?:|" \
+                           "root's password:|" \
+                           ".*?'s password:"
+
 
 def sudo(cmd):
     '''sudo command automatically input password'''
@@ -152,7 +155,7 @@ class Meta(object):
             self.logfile = Tee(self.logfile)
 
         if self.test.setup:
-            self.setup_script =  self._make_setup_script()
+            self.setup_script = self._make_setup_script()
         self.steps_script = self._make_steps_script()
         if self.test.teardown:
             self.teardown_script = self._make_teardown_script()
@@ -202,12 +205,13 @@ set +x
 (set -o posix; set) > %(var_new)s
 diff --unchanged-line-format= --old-line-format= --new-line-format='%%L' \\
     %(var_old)s %(var_new)s > %(var_out)s
-''' % {'rundir': self.rundir,
-       'var_old': os.path.join(self.meta, 'var.old'),
-       'var_new': os.path.join(self.meta, 'var.new'),
-       'var_out': os.path.join(self.meta, 'var.out'),
-       'setup': self.test.setup,
-       }
+''' % {
+            'rundir': self.rundir,
+            'var_old': os.path.join(self.meta, 'var.old'),
+            'var_new': os.path.join(self.meta, 'var.new'),
+            'var_out': os.path.join(self.meta, 'var.out'),
+            'setup': self.test.setup,
+            }
         return self._make_code('setup', code)
 
     def _make_steps_script(self):
@@ -218,10 +222,11 @@ fi
 set -o pipefail
 set -ex
 %(steps)s
-''' % {'rundir': self.rundir,
-       'var_out': os.path.join(self.meta, 'var.out'),
-       'steps': self.test.steps,
-       }
+''' % {
+            'rundir': self.rundir,
+            'var_out': os.path.join(self.meta, 'var.out'),
+            'steps': self.test.steps,
+            }
         return self._make_code('steps', code)
 
     def _make_teardown_script(self):
@@ -231,10 +236,11 @@ if [ -f %(var_out)s ]; then
 fi
 set -x
 %(teardown)s
-''' % {'rundir': self.rundir,
-       'var_out': os.path.join(self.meta, 'var.out'),
-       'teardown': self.test.teardown,
-       }
+''' % {
+            'rundir': self.rundir,
+            'var_out': os.path.join(self.meta, 'var.out'),
+            'teardown': self.test.teardown,
+            }
         return self._make_code('teardown', code)
 
     def _make_code(self, name, code):
@@ -246,7 +252,8 @@ set -x
         return path
 
     def _psh(self, script, more_expecting=()):
-        expecting = [(SUDO_PASS_PROMPT_PATTERN, settings.SUDO_PASSWD)] + list(more_expecting)
+        expecting = [(SUDO_PASS_PROMPT_PATTERN, settings.SUDO_PASSWD)] + \
+            list(more_expecting)
         try:
             return pcall('/bin/bash',
                          [script],
@@ -291,7 +298,8 @@ class TestCase(unittest.TestCase):
         classname.name
         """
         if settings.env_root:
-            retpath = self.filename[len(settings.cases_dir):].lstrip(os.path.sep)
+            retpath = self.filename[len(settings.cases_dir):]\
+                .lstrip(os.path.sep)
             base = os.path.splitext(retpath)[0]
         else:
             base = os.path.splitext(os.path.basename(self.filename))[0]
@@ -363,7 +371,8 @@ class TestCase(unittest.TestCase):
 
     def _guess_component(self, filename):
         # assert that filename is absolute path
-        if not settings.env_root or not filename.startswith(settings.cases_dir):
+        if not settings.env_root or \
+                not filename.startswith(settings.cases_dir):
             return 'unknown'
         relative = filename[len(settings.cases_dir)+1:].split(os.sep)
         # >1 means [0] is an dir name

@@ -21,14 +21,18 @@ def get_local_ipv4():
         ips.append(ip)
     return ','.join(ips)
 
+
 def now():
     return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 
 def get_dist():
     return '-'.join(platform.dist()[:2])
 
+
 def get_arch():
     return platform.architecture()[0]
+
 
 def get_machine_labels():
     '''Get machine labels for localhost. The label are strings in format of
@@ -36,7 +40,7 @@ def get_machine_labels():
     "Fedora17-x86_64", "Ubuntu", "Ubuntu12.04", "Ubuntun12.10-i586".
     '''
     dist_name, dist_ver = \
-        [ i.strip() for i in platform.linux_distribution()[:2] ]
+        [i.strip() for i in platform.linux_distribution()[:2]]
     arch = platform.machine().strip()
     return (dist_name,
             arch,
@@ -49,7 +53,9 @@ def get_machine_labels():
 def query_pkg_info(pkg):
     dist = platform.dist()[0].lower()
     if dist == 'ubuntu':
-        cmd = "dpkg -s %s 2>&1 >/dev/null && dpkg -s %s |grep ^Version |cut -d' ' -f2" % (pkg, pkg)
+        cmd = "dpkg -s %s 2>&1 >/dev/null && dpkg -s %s | "
+        "grep ^Version | "
+        "cut -d' ' -f2" % (pkg, pkg)
     else:
         cmd = 'rpm -q --qf "%%{version}-%%{release}\n" %s' % pkg
     try:
@@ -65,6 +71,7 @@ def check_output(*popenargs, **kwargs):
         return subprocess.check_output(*popenargs, **kwargs)
     return _check_output(*popenargs, **kwargs)
 
+
 def _check_output(*popenargs, **kwargs):
     r"""Run command with arguments and return its output as a byte string.
     """
@@ -72,6 +79,7 @@ def _check_output(*popenargs, **kwargs):
         raise ValueError('stdout argument not allowed, it will be overridden.')
     process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
     return process.communicate()[0]
+
 
 @contextmanager
 def cd(path):
@@ -81,6 +89,7 @@ def cd(path):
     os.chdir(path)
     yield
     os.chdir(old_path)
+
 
 def makedirs(path):
     """

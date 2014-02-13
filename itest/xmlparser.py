@@ -42,9 +42,9 @@ class Parser(object):
           <ticket>5150</ticket>
         </tracking>
         """
-        return [ (child.tag, self._text(child))
-                 for child in element
-                 if child.tag in ('change', 'ticket') ]
+        return [(child.tag, self._text(child))
+                for child in element
+                if child.tag in ('change', 'ticket')]
 
     def _on_qa(self, element):
         """
@@ -62,16 +62,19 @@ class Parser(object):
                     prompt = self._text(node)
                     state = 1
                 else:
-                    raise Exception("Case syntax error: expects <prompt> rather than %s" % node.tag)
+                    raise Exception("Case syntax error: expects <prompt> "
+                                    "rather than %s" % node.tag)
             elif state == 1:
                 if node.tag == 'answer':
                     answer = self._text(node)
                     data.append((prompt, answer))
                     state = 0
                 else:
-                    raise Exception("Case syntax error: expects <answer> rather than %s" % node.tag)
+                    raise Exception("Case syntax error: expects <answer> "
+                                    "rather than %s" % node.tag)
         if state == 1:
-            raise Exception("Case syntax error: expects <answer> rather than closing")
+            raise Exception("Case syntax error: expects <answer> rather than "
+                            "closing")
         return data
 
     def _on_conditions(self, element):
@@ -88,8 +91,8 @@ class Parser(object):
         </conditions>
         """
         def _platforms(key):
-            return [ self._text(n)
-                     for n in element.findall('./%s/platform' % key) ]
+            return [self._text(n)
+                    for n in element.findall('./%s/platform' % key)]
         return {
             'whitelist': _platforms('whitelist'),
             'blacklist': _platforms('blacklist'),
@@ -103,9 +106,9 @@ class Parser(object):
             <content target="c.conf">conf content</content>
         </fixtures>
         """
-        return [ {
-            'type': i.tag,
-            'src': i.get('src'),
-            'target': i.get('target'),
-            'text': self._text(i),
-            } for i in element if i.tag in ('copy', 'template', 'content') ]
+        return [{
+                'type': i.tag,
+                'src': i.get('src'),
+                'target': i.get('target'),
+                'text': self._text(i),
+                } for i in element if i.tag in ('copy', 'template', 'content')]

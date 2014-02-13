@@ -21,6 +21,7 @@ def convert(filename):
 
 TRACKING = re.compile(r'(#|issue|feature|bug|((c|C)(hange)?))?-?(\d+)', re.I)
 
+
 def make_xml(data):
     """
     Generate XML string from case `data`
@@ -51,7 +52,7 @@ def make_xml(data):
         for prompt, answer in data.get('qa', []):
             qa.extend(['    <prompt>%s</prompt>' % prompt,
                        '    <answer>%s</answer>' % answer,
-                      ])
+                       ])
         if qa:
             fields.append('  <qa>')
             fields.extend(qa)
@@ -100,6 +101,7 @@ def make_xml(data):
     fields.append('</testcase>')
     return '\n'.join(fields)
 
+
 def parse_args():
     """
     Parse arguments
@@ -109,16 +111,19 @@ def parse_args():
         Suffix shouldn't contain slash
         """
         if value and value.find(os.path.sep) >= 0:
-            raise argparse.ArgumentTypeError("Suffix shouldn't contain path separator")
+            raise argparse.ArgumentTypeError("Suffix shouldn't contain path "
+                                             "separator")
         return value
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--in-place', nargs='?',
-        dest='suffix', type=_check_suffix, default='',
-        help='edit files in place (makes backup if extension supplied')
+                        dest='suffix', type=_check_suffix, default='',
+                        help='edit files in place (makes backup if extension '
+                        'supplied')
     parser.add_argument('cases', nargs='+',
-        help='old format case files')
+                        help='old format case files')
     return parser.parse_args()
+
 
 def main():
     """
@@ -141,13 +146,13 @@ def main():
     args = parse_args()
     for filename in args.cases:
         xml = convert(filename)
-        if args.suffix: # -i .bak
+        if args.suffix:  # -i .bak
             backup = filename + args.suffix
             os.rename(filename, backup)
             _write(filename, xml)
-        elif args.suffix is None: # -i
+        elif args.suffix is None:  # -i
             _write(filename, xml)
-        else: # no -i
+        else:  # no -i
             print xml
 
 

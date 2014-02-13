@@ -56,8 +56,7 @@ class LazyObject(object):
     def __dir__(self):
         if self._wrapped is None:
             self._setup()
-        return  dir(self._wrapped)
-
+        return dir(self._wrapped)
 
 
 class LazySettings(LazyObject):
@@ -72,7 +71,8 @@ class LazySettings(LazyObject):
         is used the first time we need any settings at all, if the user has not
         previously configured the settings manually.
         """
-        if ENVIRONMENT_VARIABLE in os.environ and os.environ[ENVIRONMENT_VARIABLE]:
+        if ENVIRONMENT_VARIABLE in os.environ and \
+                os.environ[ENVIRONMENT_VARIABLE]:
             self._wrapped = Settings(os.environ[ENVIRONMENT_VARIABLE])
         else:
             self._wrapped = Settings()
@@ -81,7 +81,8 @@ class LazySettings(LazyObject):
 class Settings(object):
 
     def __init__(self, settings_module=None):
-        # update this dict from global settings (but only for ALL_CAPS settings)
+        # update this dict from global settings
+        # (but only for ALL_CAPS settings)
         for setting in dir(global_settings):
             if setting == setting.upper():
                 setattr(self, setting, getattr(global_settings, setting))
@@ -112,7 +113,8 @@ class Settings(object):
         try:
             mod = imp.load_source('settings', settings_fname)
         except (ImportError, IOError), e:
-            raise ImportError("Could not import settings '%s' (Is it on sys.path?): %s" % (settings_fname, e))
+            raise ImportError("Could not import settings '%s' (Is it on "
+                              "sys.path?): %s" % (settings_fname, e))
 
         for setting in dir(mod):
             if setting == setting.upper():
@@ -122,7 +124,6 @@ class Settings(object):
         if self.TZ:
             os.environ['TZ'] = self.TZ
             time.tzset()
-
 
 
 settings = LazySettings()

@@ -17,14 +17,14 @@ class BaseParser(object):
         '''Return a generator whose value is (section_name, section_content).
 
         Syntax:
-        A section is consists of a header and its content. Sections can't be nested,
-        where there is a new section begins, the previous one will be automatically
-        ended.
+        A section is consists of a header and its content. Sections can't be
+        nested, where there is a new section begins, the previous one will be
+        automatically ended.
 
-        Section name is case insensitive, only alphabets and digits are permitted,
-        it should at least contain one character. It should start with __ (two
-        underscores) and also ends with __, an optional comma at the end is also
-        allowed.
+        Section name is case insensitive, only alphabets and digits are
+        permitted, it should at least contain one character. It should start
+        with __ (two underscores) and also ends with __, an optional comma at
+        the end is also allowed.
 
         For example:
             __summary__
@@ -135,7 +135,8 @@ class CaseParser(BaseParser):
         nums = {}
         issues = text.replace(',', ' ').split()
         for issue in issues:
-            m = re.match(r'(#|issue|feature|bug|((c|C)(hange)?))?-?(\d+)', issue, re.I)
+            m = re.match(r'(#|issue|feature|bug|((c|C)(hange)?))?-?(\d+)',
+                         issue, re.I)
             if m:
                 nums[m.group()] = m.group(5)
 
@@ -185,7 +186,8 @@ class TestLoader(unittest.TestLoader):
         Load tests from a single test select pattern `sel`
         '''
         def _is_test(ret):
-            return isinstance(ret, self.suiteClass) or isinstance(ret, TestCase)
+            return isinstance(ret, self.suiteClass) or \
+                isinstance(ret, TestCase)
 
         suite = self.suiteClass()
         stack = [sel]
@@ -226,7 +228,7 @@ class FilePattern(object):
         if not os.path.isfile(name):
             return
 
-        template_dirs = [ os.path.abspath(os.path.dirname(name)) ]
+        template_dirs = [os.path.abspath(os.path.dirname(name))]
         if settings.cases_dir:
             template_dirs.append(settings.cases_dir)
         jinja2_env = Environment(loader=FileSystemLoader(template_dirs))
@@ -239,10 +241,11 @@ class FilePattern(object):
             # but xml parser only accepts str
             # And we can only assume it's utf8 here
 
-        if text.startswith('<'): # assume it is a XML file
+        if text.startswith('<'):  # assume it is a XML file
             data = xmlparser.Parser().parse(text)
             if 'tracking' in data:
-                data['issue'] = data.pop('tracking') # for backwards compability
+                # for backwards compability
+                data['issue'] = data.pop('tracking')
             data['version'] = 'xml1.0'
         else:
             data = CaseParser().parse(text)
@@ -323,8 +326,7 @@ class IntersectionPattern(object):
             return inter
 
         loader = self.loader_class()
-        many = [ loader.load(part)
-                for part in sel.split('&&') ]
+        many = [loader.load(part) for part in sel.split('&&')]
 
         return loader.suiteClass(intersection(many))
 

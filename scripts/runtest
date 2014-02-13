@@ -3,4 +3,3 @@
 if __name__ == '__main__':
     from itest import __main__
     __main__
-
