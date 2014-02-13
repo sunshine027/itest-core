@@ -168,12 +168,12 @@ class Meta(object):
             return
 
         self.logfile.close()
+        self.logfile = None
 
-        #delete color code
+        # FIXME: it's a little hack here
+        # delete color code
         os.system("sed -i 's/\x1b\[[0-9]*m//g' %s" % self.logname)
         os.system("sed -i 's/\x1b\[[0-9]*K//g' %s" % self.logname)
-
-        self.logfile = None
 
     def setup(self):
         code = 0

@@ -51,6 +51,12 @@ class XunitTestResult(TextTestResult):
 
     def _add_failure(self, test, err):
         cls, name = id_split(test.id())
+
+        with open(test.meta.logname) as reader:
+            content = reader.read()
+        content = content.replace('\r', '\n')\
+            .decode('utf8', 'ignore').encode('utf8', 'ignore')
+
         self.caselist.append(
             '<testcase classname="%(cls)s" name="%(name)s" time="%(taken).3f">'
             '<failure message="%(message)s"><![CDATA[%(log)s]]>'
@@ -59,7 +65,7 @@ class XunitTestResult(TextTestResult):
              'name': name,
              'taken': self._time_taken(),
              'message': escape_string(str(err)),
-             'log': open(test.meta.logname).read().replace('\r', '\n'),
+             'log': content,
              })
 
     def addSuccess(self, test):
