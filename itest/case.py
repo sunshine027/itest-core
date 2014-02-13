@@ -282,7 +282,7 @@ class TestCase(unittest.TestCase):
         self.version = fields.get('version')
         self.summary = fields.get('summary')
         self.steps = fields.get('steps')
-        self.setup = fields.get('steup')
+        self.setup = fields.get('setup')
         self.teardown = fields.get('teardown')
         self.qa = fields.get('qa', ())
         self.issue = fields.get('issue', {})

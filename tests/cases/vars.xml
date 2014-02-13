@@ -1,0 +1,17 @@
+<testcase>
+  <summary>
+    Varaibles defined in "steup" section should be available in "steps" and
+    "teardown" sections.
+  </summary>
+  <setup>
+    a=1
+  </setup>
+  <steps>
+    [ "$a" = 1 ]
+    b=2
+  </steps>
+  <teardown>
+    [ "$a" = 1 ]
+    [ "$b" = 2 ]
+  </teardown>
+</testcase>

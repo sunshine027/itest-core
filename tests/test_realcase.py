@@ -92,6 +92,7 @@ def _load_tests():
         method_name="test_multi_case_pass")
     _create_test(['simple.xml', 'simple_false.xml'], False,
         method_name="test_multi_case_failed")
+    _create_test(['vars.xml'])
 
     _create_test_in_tproj('copy_fixture.xml')
     _create_test_in_tproj('template_fixture.xml')

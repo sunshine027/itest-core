@@ -11,6 +11,7 @@ def escape_string(string):
                                     '\n': ' ',
                                     })
 
+
 class XunitTestResult(TextTestResult):
 
     xunit_file = 'xunit.xml'
