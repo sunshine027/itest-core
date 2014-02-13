@@ -1,13 +1,16 @@
 import os
 import unittest
+import functools
 import subprocess
 import xml.etree.ElementTree as ET
 
-from itest.utils import cd
+from itest.utils import cd as _cd
 
 
 SELF_PATH = os.path.dirname(__file__)
 CASES_PATH = os.path.join(SELF_PATH, 'cases')
+PROJ_PATH = os.path.join(SELF_PATH, 'tproj', 'cases')
+
 
 def _run(cmd, **kw):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -21,101 +24,117 @@ STDERR:
     return proc.returncode, msg
 
 
-class RealCaseTest(unittest.TestCase):
-    """
-    Test methods will be loaded at runtime
-    """
+def cd(path):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kw):
+            with _cd(path):
+                return func(*args, **kw)
+        return wrapper
+    return decorator
 
-    def test_with_xunit(self):
-        with cd(CASES_PATH):
-            _run(["rm", "-f", "xunit.xml"])
-            _run(["runtest", "--with-xunit", "simple.xml"])
 
-            # check whether xml is valid
-            ET.parse('xunit.xml')
+class TestBase(unittest.TestCase):
 
-    def test_without_xunit(self):
-        with cd(CASES_PATH):
-            _run(["rm", "-f", "xunit.xml"])
-            _run(["runtest", "simple.xml"])
-            self.assertNotEqual(0, _run(["ls", "xunit.xml"])[0])
-
-    def test_xunit_file(self):
-        with cd(CASES_PATH):
-            _run(["rm", "-r", "xunit.xml", "xunit2.xml"])
-            _run(["runtest", "--with-xunit", "--xunit-file=xunit2.xml", "simple.xml"])
-            self.assertEquals(0, _run(["ls", "xunit2.xml"])[0])
-
-    def test_xml_validation(self):
-        with cd(CASES_PATH):
-            _run(["rm", "-f", "xunit.xml"])
-            _run(["runtest", "--with-xunit", "simple_false.xml"])
-            ET.parse('xunit.xml')
-
-    def test_setup_always_run(self):
-        with cd(CASES_PATH):
-            code, msg = _run(["runtest", "-vv", "setup.xml"])
-            self.assertEquals(0, code, msg)
-            found = msg.find("This message only appears in setup section") > 0
-            self.assertTrue(found, msg)
-
-    def test_teardown_always_run(self):
-        with cd(CASES_PATH):
-            code, msg = _run(["runtest", "-vv", "teardown.xml"])
-            self.assertNotEquals(0, code, msg)
-            found = msg.find("This message only appears in teardown section") > 0
-            self.assertTrue(found, msg)
-
-    def test_steps_wont_run_if_setup_failed(self):
-        with cd(CASES_PATH):
-            code, msg = _run(["runtest", "-vv", "setup_failed.xml"])
-            self.assertNotEquals(0, code, msg)
-            found = msg.find("This message only appears in steps section") > 0
-            self.assertFalse(found, msg)
-
+    @cd(SELF_PATH)
     def tearDown(self):
-        with cd(SELF_PATH):
-            _run(["find", ".", "-regex", ".*/xunit.?.xml$", "-delete"])
+        _run(["find", ".", "-regex", ".*/xunit.?.xml$", "-delete"])
+
+    def assertPass(self, (code, msg)):
+        self.assertEquals(0, code, msg)
+
+    def assertFail(self, (code, msg)):
+        self.assertNotEquals(0, code, msg)
 
 
-def _create_test(case_names, expect_pass=True, method_name=None):
-    def test(self):
-        with cd(CASES_PATH):
-            ret, msg = _run(["runtest", "-vv"] + case_names)
-        if expect_pass:
-            self.assertEqual(0, ret, msg)
-        else:
-            self.assertNotEqual(0, ret, msg)
+class BasicTest(TestBase):
 
-    if not method_name:
-        method_name = 'test_%s' % case_names[0].replace('.', '_')
-    test.__name__ = method_name
-    setattr(RealCaseTest, method_name, test)
+    @cd(CASES_PATH)
+    def test_simple(self):
+        self.assertPass(_run(["runtest", "simple.xm"]))
 
-def _create_test_in_tproj(name):
-    path = os.path.join(SELF_PATH, 'tproj', 'cases')
-    def test(self):
-        with cd(path):
-            ret, msg = _run(["runtest", "-vv", name])
-        self.assertEquals(0, ret, msg)
+    @cd(CASES_PATH)
+    def test_simple_false(self):
+        self.assertFail(_run(["runtest", 'simple_false.xml']))
 
-    funcname = 'test_tproj_%s' % name.replace('.', '_')
-    setattr(RealCaseTest, funcname, test)
+    @cd(CASES_PATH)
+    def test_cdata(self):
+        self.assertPass(_run(["runtest", "-vv", "cdata.xml"]))
+
+    @cd(CASES_PATH)
+    def test_qa(self):
+        self.assertPass(_run(["runtest", "qa.xml"]))
+
+    @cd(CASES_PATH)
+    def test_content_fixture(self):
+        self.assertPass(_run(["runtest", "content_fixture.xml"]))
+
+    @cd(CASES_PATH)
+    def test_multi_case_pass(self):
+        self.assertPass(_run(["runtest", "simple.xml", "cdata.xml"]))
+
+    @cd(CASES_PATH)
+    def test_multi_case_failed(self):
+        self.assertFail(_run(["runtest", "simple.xml", "simple_false.xml"]))
+
+    @cd(CASES_PATH)
+    def test_vars(self):
+        self.assertPass(_run(["runtest", "vars.xml"]))
 
 
-def _load_tests():
-    _create_test(['simple.xml'])
-    _create_test(['simple_false.xml'], False)
-    _create_test(['cdata.xml'])
-    _create_test(['qa.xml'])
-    _create_test(['content_fixture.xml'])
-    _create_test(['simple.xml', 'cdata.xml'],
-        method_name="test_multi_case_pass")
-    _create_test(['simple.xml', 'simple_false.xml'], False,
-        method_name="test_multi_case_failed")
-    _create_test(['vars.xml'])
+class XunitTest(TestBase):
 
-    _create_test_in_tproj('copy_fixture.xml')
-    _create_test_in_tproj('template_fixture.xml')
+    @cd(CASES_PATH)
+    def test_with_xunit(self):
+        _run(["rm", "-f", "xunit.xml"])
+        _run(["runtest", "--with-xunit", "simple.xml"])
 
-_load_tests()
+        # check whether xml is valid
+        ET.parse('xunit.xml')
+
+    @cd(CASES_PATH)
+    def test_without_xunit(self):
+        _run(["rm", "-f", "xunit.xml"])
+        _run(["runtest", "simple.xml"])
+        self.assertFail(_run(["ls", "xunit.xml"]))
+
+    @cd(CASES_PATH)
+    def test_xunit_file(self):
+        _run(["rm", "-r", "xunit.xml", "xunit2.xml"])
+        _run(["runtest", "--with-xunit", "--xunit-file=xunit2.xml", "simple.xml"])
+        self.assertPass(_run(["ls", "xunit2.xml"]))
+
+    @cd(CASES_PATH)
+    def test_xml_validation(self):
+        _run(["rm", "-f", "xunit.xml"])
+        _run(["runtest", "--with-xunit", "simple_false.xml"])
+        ET.parse('xunit.xml')
+
+    @cd(PROJ_PATH)
+    def test_copy_fixture_in_proj(self):
+        self.assertPass(_run(["runtest", "copy_fixture.xml"]))
+
+    @cd(PROJ_PATH)
+    def test_render_template_fixture_in_proj(self):
+        self.assertPass(_run(["runtest", "template_fixture.xml"]))
+
+
+class SetupTeardownTest(TestBase):
+
+    @cd(CASES_PATH)
+    def test_setup_always_run(self):
+        code, msg = _run(["runtest", "-vv", "setup.xml"])
+        found = msg.find("This message only appears in setup section") > 0
+        self.assertTrue(found, msg)
+
+    @cd(CASES_PATH)
+    def test_teardown_always_run(self):
+        code, msg = _run(["runtest", "-vv", "teardown.xml"])
+        found = msg.find("This message only appears in teardown section") > 0
+        self.assertTrue(found, msg)
+
+    @cd(CASES_PATH)
+    def test_steps_wont_run_if_setup_failed(self):
+        code, msg = _run(["runtest", "-vv", "setup_failed.xml"])
+        found = msg.find("This message only appears in steps section") > 0
+        self.assertFalse(found, msg)
