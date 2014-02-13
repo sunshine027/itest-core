@@ -42,10 +42,10 @@ def parted(img):
                     start += len(col)
                 state = 'parts'
             elif line.strip():
-                part = dict([ (title, line[getter].strip())
-                    for title, getter in titles ])
-                for title in ('start',): #start, end, size
-                    part[title] = int(part[title][:-1]) # remove tailing "B"
+                part = dict([(title, line[getter].strip())
+                             for title, getter in titles])
+                for title in ('start',):  # start, end, size
+                    part[title] = int(part[title][:-1])  # remove tailing "B"
                 part['number'] = int(part['number'])
                 parts.append(part)
         return parts
@@ -59,13 +59,14 @@ def blkid(img, offset_in_bytes):
     "Parse output of blkid command"
     def parse(output):
         '''Example:
-        sdb.raw: LABEL="boot" UUID="2995b233-ff79-4719-806d-d7f42b34a133" VERSION="1.0" TYPE="ext4" USAGE="filesystem"
+        sdb.raw: LABEL="boot" UUID="2995b233-ff79-4719-806d-d7f42b34a133" \
+             VERSION="1.0" TYPE="ext4" USAGE="filesystem"
         '''
         output = output.splitlines()[0].split(': ', 1)[1]
         info = {}
         for item in output.split():
             key, val = item.split('=', 1)
-            info[key.lower()] = val[1:-1] # remove double quotes
+            info[key.lower()] = val[1:-1]  # remove double quotes
         return info
 
     cmd = ['blkid', '-p', '-O', str(offset_in_bytes), '-o', 'full', img]
@@ -102,17 +103,17 @@ def gdisk(img):
         """
         lines = output.splitlines()
 
-        line = [ i for i in lines if i.startswith('Logical sector size:') ]
+        line = [i for i in lines if i.startswith('Logical sector size:')]
         if not line:
             raise Exception("Can't find sector size from gdisk output:%s:%s"
-                % (" ".join(cmd), output))
+                            % (" ".join(cmd), output))
         size = int(line[0].split(':', 1)[1].strip().split()[0])
 
         parts = []
         lines.reverse()
         for line in lines:
             if not line.startswith(' ') or \
-               not line.lstrip().split()[0].isdigit():
+                    not line.lstrip().split()[0].isdigit():
                 break
             number, start, _ = line.lstrip().split(None, 2)
             parts.append(dict(number=int(number), start=int(start)*size))
@@ -120,7 +121,6 @@ def gdisk(img):
 
     output = check_output(cmd)
     return parse(output)
-
 
 
 class FSTab(dict):
@@ -160,8 +160,8 @@ class FSTab(dict):
     def guess(cls, paths):
         '''Guess fstab location from all partitions of the image
         '''
-        guess1 = ( os.path.join(path, 'etc', 'fstab') for path in paths )
-        guess2 = ( os.path.join(path, 'fstab') for path in paths )
+        guess1 = (os.path.join(path, 'etc', 'fstab') for path in paths)
+        guess2 = (os.path.join(path, 'fstab') for path in paths)
         guesses = chain(guess1, guess2)
         exists = ifilter(os.path.exists, guesses)
         one = list(islice(exists, 1))
@@ -174,8 +174,10 @@ def get_partition_info(img):
         parts = parted(img)
     except CalledProcessError as err:
         print >> sys.stderr, err
-        # Sometimes parted could failed with error like this, then we try gdisk
-        # Error during translation: Invalid or incomplete multibyte or wide character
+        # Sometimes parted could failed with error
+        # like this, then we try gdisk.
+        # "Error during translation: Invalid or incomplete
+        # multibyte or wide character"
         parts = gdisk(img)
     for part in parts:
         part['blkid'] = blkid(img, part['start'])

@@ -13,7 +13,7 @@ from imgdiff.unified import parse
 
 
 PATTERN_PREFIX = re.compile(r'.*?img[12](%(sep)sroot)?(%(sep)s.*)' %
-    {'sep': os.path.sep})
+                            {'sep': os.path.sep})
 
 
 def strip_prefix(filename):
@@ -66,7 +66,7 @@ def parse_args():
     '''parse arguments'''
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--conf-filename',
-        help='conf for defining unimportant difference')
+                        help='conf for defining unimportant difference')
     return parser.parse_args()
 
 

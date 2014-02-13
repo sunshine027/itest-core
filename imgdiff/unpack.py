@@ -58,9 +58,9 @@ class Mount(object):
         '''
         self._check_path(path)
         cmd = ['sudo', 'mount',
-            '-o', 'ro,offset=%d' % offset,
-            '-t', fstype,
-            image, path]
+               '-o', 'ro,offset=%d' % offset,
+               '-t', fstype,
+               image, path]
         print 'Mounting', '%d@%s' % (offset, image), '->', path, '...'
         check_call(cmd)
 
@@ -119,12 +119,13 @@ class Image(object):
             elif 'uuid' in item and item['uuid'] in uuid2temp:
                 source = uuid2temp[item['uuid']]
             else:
-                print >> sys.stderr, "fstab mismatch with partition table:", item["entry"]
+                print >> sys.stderr, "fstab mismatch with partition table:", \
+                    item["entry"]
                 return
 
             # remove heading / otherwise the path will reduce to root
             target = os.path.join(basedir, 'root',
-                mountpoint.lstrip(os.path.sep))
+                                  mountpoint.lstrip(os.path.sep))
             pairs.append((source, target))
 
         for source, target in pairs:
@@ -144,22 +145,22 @@ class Image(object):
             print >> sys.stderr, "Can't find fstab file from image"
             return
         return self._move_to_root(fstab,
-                num2temp, uuid2temp,
-                basedir, mount)
-
+                                  num2temp, uuid2temp,
+                                  basedir, mount)
 
 
 def parse_args():
     "Parse arguments"
     parser = argparse.ArgumentParser()
     parser.add_argument('image', type=os.path.abspath,
-        help='image file to unpack. Only raw format is supported')
+                        help='image file to unpack. Only raw format is '
+                        'supported')
     parser.add_argument('basedir', type=os.path.abspath,
-        help='directory to unpack the image')
+                        help='directory to unpack the image')
     parser.add_argument('resourcelist_filename', type=os.path.abspath,
-        help='will record each mount point when unpacking the image. '
-        'Make sure call cleanup script with this file name to release '
-        'all allocated resources.')
+                        help='will record each mount point when unpacking '
+                        'the image. Make sure call cleanup script with this '
+                        'file name to release all allocated resources.')
     return parser.parse_args()
 
 

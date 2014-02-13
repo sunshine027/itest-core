@@ -68,7 +68,8 @@ class OnlyInOneSide(MessageParser):
 
 class SpecialFile(MessageParser):
     '''Message like this:
-    File img1/partx/p2/dev/full is a character special file while file img2/partx/p2/dev/full is a character special file
+    File img1/partx/p2/dev/full is a character special file while file
+    img2/partx/p2/dev/full is a character special file
     '''
 
     PATTERN = re.compile(r'File (.*?) is a (.*) while file (.*?) is a (.*)')
@@ -79,15 +80,17 @@ class SpecialFile(MessageParser):
         return {
             'type': 'message',
             'filetype': match.group(2),
-            'message': line[:-1], # strip the last \n
+            'message': line[:-1],  # strip the last \n
             'fromfile': fromfile,
             'tofile': tofile,
             'filename': fromfile,
             }
 
+
 class BinaryFile(MessageParser):
     '''Message like this:
-    Binary files img1/partx/p2/var/lib/random-seed and img2/partx/p2/var/lib/random-seed differ
+    Binary files img1/partx/p2/var/lib/random-seed and
+    img2/partx/p2/var/lib/random-seed differ
     '''
 
     PATTERN = re.compile(r'Binary files (.*?) and (.*?) differ')
@@ -98,19 +101,21 @@ class BinaryFile(MessageParser):
         return {
             'type': 'message',
             'filetype': 'Binary files',
-            'message': line[:-1], # strip the last \n
+            'message': line[:-1],  # strip the last \n
             'fromfile': fromfile,
             'tofile': tofile,
             'filename': fromfile,
             }
 
-MESSAGE_PARSERS = [ obj() for name, obj in globals().items()
-    if hasattr(obj, '__bases__') and MessageParser in obj.__bases__ ]
+
+MESSAGE_PARSERS = [obj() for name, obj in globals().items()
+                   if hasattr(obj, '__bases__') and
+                   MessageParser in obj.__bases__]
 
 
 class Message(dict):
-    """Message that file can't be compare
-    Such as binary, device files
+    """
+    Message that file can't be compare, such as binary, device files
     """
 
     @classmethod
@@ -129,8 +134,8 @@ class Message(dict):
 
 
 class OneFileDiff(dict):
-    """Diff result for one same file name in
-    two sides
+    """
+    Diff result for one same file name in two sides
     """
 
     @classmethod
@@ -143,7 +148,8 @@ class OneFileDiff(dict):
             Hunks: context and different text
 
         Example:
-        diff -r -u /home/xxx/tmp/images/img1/partition_table.txt /home/xxx/tmp/images/img2/partition_table.txt
+        diff -r -u /home/xxx/tmp/images/img1/partition_table.txt
+            /home/xxx/tmp/images/img2/partition_table.txt
         --- img1/partition_tab.txt      2013-10-28 11:05:11.814220566 +0800
         +++ img2/partition_tab.txt      2013-10-28 11:05:14.954220642 +0800
         @@ -1,5 +1,5 @@
@@ -160,6 +166,7 @@ class OneFileDiff(dict):
 
         startline = line[:-1]
         cols = ('path', 'date', 'time', 'timezone')
+
         def parse_header(line):
             '''header'''
             return dict(zip(cols, line.rstrip().split()[1:]))
@@ -188,10 +195,10 @@ class OneFileDiff(dict):
             return str(start) if count <= 1 else '%d,%d' % (start, count)
 
         for i in self['sections']:
-            sec = ['@@ -%s +%s @@' % \
-                      (start_count(*i['range']['delete']),
-                       start_count(*i['range']['insert']))
-                  ]
+            sec = ['@@ -%s +%s @@' %
+                   (start_count(*i['range']['delete']),
+                    start_count(*i['range']['insert']))
+                   ]
             for j in i['hunks']:
                 typ, txt = j['type'], j['text']
                 if typ == 'context':
@@ -205,12 +212,11 @@ class OneFileDiff(dict):
                 else:
                     sec.append(txt)
             sections.append('\n'.join(sec))
-        return '\n'.join([
-                self['startline'],
-                fromfile,
-                tofile,
-                '\n'.join(sections),
-                ])
+        return '\n'.join([self['startline'],
+                          fromfile,
+                          tofile,
+                          '\n'.join(sections),
+                          ])
 
     @classmethod
     def _parse_sections(cls, stream):
@@ -223,10 +229,9 @@ class OneFileDiff(dict):
 
             range_ = cls._parse_range(line)
             hunks = cls._parse_hunks(stream)
-            sections.append({
-                'range': range_,
-                'hunks': hunks,
-                })
+            sections.append({'range': range_,
+                             'hunks': hunks,
+                             })
         return sections
 
     @classmethod
@@ -259,7 +264,7 @@ class OneFileDiff(dict):
             else:
                 stream.push_back(line)
                 break
-            text = line[1:-1] # remove the last \n
+            text = line[1:-1]  # remove the last \n
             hunks.append({'type': type_, 'text': text})
         return hunks
 
@@ -267,7 +272,8 @@ class OneFileDiff(dict):
 def parse(stream):
     '''
     Unified diff result parser
-    Reference: http://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html#Detailed-Unified
+    Reference: http://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html#Detailed-Unified  # flake8: noqa
+
     '''
     stream = LookAhead(stream)
     while 1:

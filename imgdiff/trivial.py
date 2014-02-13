@@ -50,11 +50,11 @@ class Rules(object):
             /dev/
             some/file.txt
             """
-            if pattern.endswith(os.path.sep): # direcotry name
+            if pattern.endswith(os.path.sep):  # direcotry name
                 pattern = pattern + '*'
 
             bname = os.path.basename(pattern)
-            if bname == pattern: # only basename, ignore dirname
+            if bname == pattern:  # only basename, ignore dirname
                 def matcher(filename):
                     "Matcher"
                     return fnmatch.fnmatch(os.path.basename(filename), pattern)
@@ -97,7 +97,7 @@ class IgnoreLines(object):
     differences according to given patterns
     """
     def __init__(self, patterns):
-        self.patterns = [re.compile(p) for p in patterns ]
+        self.patterns = [re.compile(p) for p in patterns]
 
     def is_unimportant(self, line):
         "Is this line trivial"

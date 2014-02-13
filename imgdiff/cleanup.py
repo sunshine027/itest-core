@@ -16,6 +16,7 @@ def umount(path):
     print "Umounting", path, "..."
     return call(cmd)
 
+
 def loopdel(val):
     '''Release loop dev at val
     '''
