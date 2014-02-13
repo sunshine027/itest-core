@@ -1,0 +1,10 @@
+<testcase>
+  <summary>teardown always run even steps failed</summary>
+  <steps>
+    ls -a .meta
+    false
+  </steps>
+  <teardown>
+    echo This message only appears in teardown section
+  </teardown>
+</testcase>

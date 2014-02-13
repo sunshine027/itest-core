@@ -1,0 +1,9 @@
+<testcase>
+  <summary>"setup" always run</summary>
+  <setup>
+    echo This message only appears in setup section
+  </setup>
+  <steps>
+    echo steps
+  </steps>
+</testcase>

@@ -1,0 +1,6 @@
+<testcase>
+  <summary>Steps won't run if setup failed</summary>
+  <setup>false</setup>
+  <steps>echo This message only appears in steps section</steps>
+  <teardown>echo This message only appears in teardown section</teardown>
+</testcase>

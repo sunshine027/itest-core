@@ -52,6 +52,27 @@ class RealCaseTest(unittest.TestCase):
             _run(["runtest", "--with-xunit", "simple_false.xml"])
             ET.parse('xunit.xml')
 
+    def test_setup_always_run(self):
+        with cd(CASES_PATH):
+            code, msg = _run(["runtest", "-vv", "setup.xml"])
+            self.assertEquals(0, code, msg)
+            found = msg.find("This message only appears in setup section") > 0
+            self.assertTrue(found, msg)
+
+    def test_teardown_always_run(self):
+        with cd(CASES_PATH):
+            code, msg = _run(["runtest", "-vv", "teardown.xml"])
+            self.assertNotEquals(0, code, msg)
+            found = msg.find("This message only appears in teardown section") > 0
+            self.assertTrue(found, msg)
+
+    def test_steps_wont_run_if_setup_failed(self):
+        with cd(CASES_PATH):
+            code, msg = _run(["runtest", "-vv", "setup_failed.xml"])
+            self.assertNotEquals(0, code, msg)
+            found = msg.find("This message only appears in steps section") > 0
+            self.assertFalse(found, msg)
+
     def tearDown(self):
         with cd(SELF_PATH):
             _run(["find", ".", "-regex", ".*/xunit.?.xml$", "-delete"])

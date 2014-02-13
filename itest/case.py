@@ -176,16 +176,18 @@ class Meta(object):
         self.logfile = None
 
     def setup(self):
+        code = 0
         if self.setup_script:
             self.log('setup start')
-            self._psh(self.setup_script)
+            code = self._psh(self.setup_script)
             self.log('setup finish')
+        return code
 
     def steps(self):
         self.log('steps start')
-        retu = self._psh(self.steps_script, self.test.qa)
+        code = self._psh(self.steps_script, self.test.qa)
         self.log('steps finish')
-        return retu
+        return code
 
     def teardown(self):
         if self.teardown_script:
@@ -201,10 +203,12 @@ class Meta(object):
 (set -o posix; set) > %(var_old)s
 set -x
 %(setup)s
+__exitcode__=$?
 set +x
 (set -o posix; set) > %(var_new)s
 diff --unchanged-line-format= --old-line-format= --new-line-format='%%L' \\
     %(var_old)s %(var_new)s > %(var_out)s
+exit ${__exitcode__}
 ''' % {
             'rundir': self.rundir,
             'var_old': os.path.join(self.meta, 'var.old'),
@@ -332,21 +336,26 @@ class TestCase(unittest.TestCase):
             meta.begin()
             meta.log('case start to run!')
             if self.setup:
-                meta.setup()
+                code = meta.setup()
+                if code != 0:
+                    msg = "setup failed. Exit %d, see log: %s" % (
+                        code, meta.logname)
+                    raise Exception(msg)
 
     def tearDown(self):
         meta = self.meta
         if meta:
-            meta.teardown()
-            meta.log('case is finished!')
-            meta.end()
+            with cd(self.rundir):
+                meta.teardown()
+                meta.log('case is finished!')
+                meta.end()
 
     def runTest(self):
         meta = self.meta
         with cd(self.rundir):
             code = meta.steps()
 
-        msg = "Nonzero exitcode. See log: %s" % self.meta.logname
+        msg = "Exit Nonzero %d. See log: %s" % (code, self.meta.logname)
         self.assertEqual(0, code, msg)
 
     def _check_conditions(self):
