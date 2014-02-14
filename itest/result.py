@@ -1,3 +1,4 @@
+import re
 import time
 from unittest2 import TextTestResult
 from xml.sax import saxutils
@@ -10,6 +11,9 @@ def escape_string(string):
                                     "'": '&apos;',
                                     '\n': ' ',
                                     })
+
+
+SHELL_COLOR_PATTERN = re.compile(r'\x1b\[[0-9]*[mK]')
 
 
 class XunitTestResult(TextTestResult):
@@ -56,6 +60,7 @@ class XunitTestResult(TextTestResult):
             content = reader.read()
         content = content.replace('\r', '\n')\
             .decode('utf8', 'ignore').encode('utf8', 'ignore')
+        content = SHELL_COLOR_PATTERN.sub('', content)
 
         self.caselist.append(
             '<testcase classname="%(cls)s" name="%(name)s" time="%(taken).3f">'
