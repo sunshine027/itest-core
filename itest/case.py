@@ -107,9 +107,12 @@ class Tee(object):
 
     '''data write to original will write to another as well'''
 
-    def __init__(self, original, another=sys.stdout):
+    def __init__(self, original, another=None):
         self.original = original
-        self.another = another
+        if another is None:
+            self.another = sys.stderr
+        else:
+            self.another = another
 
     def write(self, data):
         self.another.write(data)

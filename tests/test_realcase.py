@@ -16,11 +16,12 @@ def _run(cmd, **kw):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, **kw)
     stdout, stderr = proc.communicate()
-    msg = """Exit code %s != 0.
+    msg = """Exit code %s.
 STDOUT:
 %s
 STDERR:
-%s""" % (proc.returncode, stdout, stderr)
+%s
+END""" % (proc.returncode, stdout, stderr)
     return proc.returncode, msg
 
 
@@ -41,7 +42,9 @@ class TestBase(unittest.TestCase):
         _run(["find", ".", "-regex", ".*/xunit.?.xml$", "-delete"])
 
     def assertPass(self, (code, msg)):
-        self.assertEquals(0, code, msg)
+        self.assertTrue(0 == code and
+                        msg.find("Ran 0 tests in") == -1,
+                        msg)
 
     def assertFail(self, (code, msg)):
         self.assertNotEquals(0, code, msg)
@@ -51,7 +54,7 @@ class BasicTest(TestBase):
 
     @cd(CASES_PATH)
     def test_simple(self):
-        self.assertPass(_run(["runtest", "simple.xm"]))
+        self.assertPass(_run(["runtest", "simple.xml"]))
 
     @cd(CASES_PATH)
     def test_simple_false(self):
