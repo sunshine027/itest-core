@@ -3,7 +3,6 @@ import sys
 import time
 import uuid
 import shutil
-import logging
 
 import unittest2 as unittest
 from unittest2 import SkipTest
@@ -92,15 +91,6 @@ def pcall(cmd, args=(), expecting=(), output=None,
 SUDO_PASS_PROMPT_PATTERN = "\[sudo\] password for .*?:|" \
                            "root's password:|" \
                            ".*?'s password:"
-
-
-def sudo(cmd):
-    '''sudo command automatically input password'''
-    cmd = 'sudo ' + cmd
-    logging.info(cmd)
-
-    expecting = [(SUDO_PASS_PROMPT_PATTERN, settings.SUDO_PASSWD)]
-    return pcall(cmd, expecting=expecting, output=sys.stdout, eof_timeout=10)
 
 
 class Tee(object):

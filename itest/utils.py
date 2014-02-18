@@ -1,37 +1,12 @@
 import os
-import re
 import datetime
 import platform
 import subprocess
 from contextlib import contextmanager
 
 
-def get_local_ipv4():
-    inet_addr = re.compile(r'(inet\s+|inet addr:)([\d\.]+)')
-    output = check_output('/sbin/ifconfig')
-    ips = []
-
-    for line in output.split('\n'):
-        match = inet_addr.search(line)
-        if not match:
-            continue
-        ip = match.group(2)
-        if ip.startswith('127.'):
-            continue
-        ips.append(ip)
-    return ','.join(ips)
-
-
 def now():
     return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-
-def get_dist():
-    return '-'.join(platform.dist()[:2])
-
-
-def get_arch():
-    return platform.architecture()[0]
 
 
 def get_machine_labels():
@@ -48,22 +23,6 @@ def get_machine_labels():
             '%s-%s' % (dist_name, arch),
             '%s%s-%s' % (dist_name, dist_ver, arch),
             )
-
-
-def query_pkg_info(pkg):
-    dist = platform.dist()[0].lower()
-    if dist == 'ubuntu':
-        cmd = "dpkg -s %s 2>&1 >/dev/null && dpkg -s %s | "
-        "grep ^Version | "
-        "cut -d' ' -f2" % (pkg, pkg)
-    else:
-        cmd = 'rpm -q --qf "%%{version}-%%{release}\n" %s' % pkg
-    try:
-        version_info = check_output(cmd, shell=True,
-                                    stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError:
-        version_info = "Not available"
-    return version_info.strip()
 
 
 def check_output(*popenargs, **kwargs):
