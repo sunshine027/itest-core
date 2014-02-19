@@ -5,9 +5,12 @@ import argparse
 import unittest2 as unittest
 from unittest2 import TextTestResult
 
+from itest import conf
 from itest.utils import makedirs
 from itest.loader import TestLoader
-from itest.conf import settings, ENVIRONMENT_VARIABLE
+
+
+ENVIRONMENT_VARIABLE = "ITEST_ENV_PATH"
 
 
 def find_test_project_from_cwd():
@@ -79,15 +82,16 @@ class TestProgram(unittest.TestProgram):
             self.testRunner.resultclass = XunitTestResult
             self.testRunner.resultclass.xunit_file = opts.xunit_file
 
-        if not opts.test_project_path:
-            opts.test_project_path = find_test_project_from_cwd()
         if opts.test_project_path:
-            os.environ[ENVIRONMENT_VARIABLE] = opts.test_project_path
-        settings.verbosity = self.verbosity
+            conf.load_settings(opts.test_project_path)
+        else:
+            conf.load_settings(find_test_project_from_cwd())
+
+        conf.settings.verbosity = self.verbosity
 
         if opts.test_workspace:
-            settings.WORKSPACE = opts.test_workspace
-        makedirs(settings.WORKSPACE)
+            conf.settings.WORKSPACE = opts.test_workspace
+        makedirs(conf.settings.WORKSPACE)
 
         # copy from super class
         if len(opts.tests) == 0 and self.defaultTest is None:
