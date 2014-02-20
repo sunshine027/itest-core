@@ -10,8 +10,9 @@ from itest.utils import cd as _cd
 
 
 SELF_PATH = os.path.dirname(__file__)
-CASES_PATH = os.path.join(SELF_PATH, 'cases')
-PROJ_PATH = os.path.join(SELF_PATH, 'tproj')
+DATA_PATH = os.path.join(SELF_PATH, '..', 'data')
+CASES_PATH = os.path.join(DATA_PATH, 'cases')
+PROJ_PATH = os.path.join(DATA_PATH, 'sample_project')
 PROJ_CASES_PATH = os.path.join(PROJ_PATH, 'cases')
 
 
@@ -48,9 +49,9 @@ END""" % (exitcode, stderr)
 
 class TestBase(unittest.TestCase):
 
-    @cd(SELF_PATH)
+    @cd(DATA_PATH)
     def setUp(self):
-        call(["find", ".", "-regex", ".*/xunit.?.xml$", "-delete"])
+        call(["find", ".", "-name", "xunit*.xml", "-delete"])
 
     def assertPass(self, *argv):
         exitcode, stderr = runtest(*argv)
