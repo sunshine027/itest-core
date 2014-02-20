@@ -6,7 +6,6 @@ individual env's settings.py
 '''
 
 import os
-import time
 
 
 WORKSPACE = os.path.expanduser('~/testspace')
@@ -54,16 +53,3 @@ HANGING_TIMEOUT = 5 * 60  # 5 minutes
 
 # Time zone
 TZ = None
-
-
-# Default tags used as search keywords
-def _get_target_name():
-    '''get runtime target name'''
-    from itest.conf import settings
-    return settings.TARGET_NAME
-
-
-TAGS = [
-    lambda: time.strftime('%Y%m%d'),  # Date
-    _get_target_name,  # Target Name
-    ]
