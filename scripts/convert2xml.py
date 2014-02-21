@@ -82,7 +82,6 @@ def make_xml(data):
 
     fields = [
         '<testcase>',
-        '  <version>1.0</version>',
         '  <summary>%s</summary>' % data['summary'],
         ]
 
