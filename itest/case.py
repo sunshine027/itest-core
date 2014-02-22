@@ -6,7 +6,6 @@ import shutil
 
 import unittest2 as unittest
 from unittest2 import SkipTest
-from jinja2 import Environment, FileSystemLoader
 import pexpect
 if hasattr(pexpect, 'spawnb'):  # pexpect-u-2.5
     spawn = pexpect.spawnb
@@ -14,7 +13,8 @@ else:
     spawn = pexpect.spawn
 
 from itest.conf import settings
-from itest.utils import now, cd, get_machine_labels, makedirs
+from itest.utils import now, cd, get_machine_labels
+from itest.fixture import Fixture
 
 
 def id_split(idstring):
@@ -284,7 +284,9 @@ class TestCase(unittest.TestCase):
         self.qa = fields.get('qa', ())
         self.issue = fields.get('issue', {})
         self.conditions = fields.get('conditions', {})
-        self.fixtures = fields.get('fixtures', ())
+        self.fixtures = [Fixture(os.path.dirname(self.filename),
+                                 i)
+                         for i in fields.get('fixtures', ())]
 
         self.component = self._guess_component(self.filename)
 
@@ -387,59 +389,11 @@ class TestCase(unittest.TestCase):
         return path
 
     def _copy_fixtures(self):
-        todir = self.rundir
         if self.version != 'xml1.0' and settings.fixtures_dir:
-            return self._copy_all_fixtures(todir)
+            return self._copy_all_fixtures(self.rundir)
 
-        def _copy(source, target):
-            makedirs(os.path.dirname(target))
-            if os.path.isdir(source):
-                print source, target
-                shutil.copytree(source, target)
-            else:
-                shutil.copy(source, target)
-
-        def _template(source, target):
-            template_dirs = [os.path.abspath(os.path.dirname(source))]
-            if settings.fixtures_dir:
-                template_dirs.append(settings.fixtures_dir)
-            jinja2_env = Environment(loader=FileSystemLoader(template_dirs))
-            template = jinja2_env.get_template(os.path.basename(source))
-            text = template.render()
-
-            makedirs(os.path.dirname(target))
-            with open(target, 'w') as writer:
-                writer.write(text)
-
-        def _write(text, target):
-            makedirs(os.path.dirname(target))
-            with open(target, 'w') as writer:
-                writer.write(text)
-
-        casedir = os.path.dirname(self.filename)
         for item in self.fixtures:
-            if 'src' in item and item['src']:
-                source = os.path.join(casedir, item['src'])
-                if not os.path.exists(source) and settings.fixtures_dir:
-                    source = os.path.join(settings.fixtures_dir, item['src'])
-                source = source.rstrip(os.path.sep)
-            elif item['type'] != 'content':
-                raise Exception("Attribute src can't be found")
-
-            if 'target' in item and item['target']:
-                target = os.path.join(todir,
-                                      item['target'].rstrip(os.path.sep))
-            else:
-                target = os.path.join(todir, os.path.basename(source))
-
-            if item['type'] == 'copy':
-                _copy(source, target)
-            elif item['type'] == 'template':
-                _template(source, target)
-            elif item['type'] == 'content':
-                _write(item['text'], target)
-            else:
-                raise Exception("Unknown fixture type: %s" % item['type'])
+            item.copy(self.rundir)
 
     def _copy_all_fixtures(self, todir):
         for name in os.listdir(settings.fixtures_dir):

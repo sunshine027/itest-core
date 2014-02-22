@@ -115,9 +115,11 @@ class Parser(object):
             <content target="c.conf">conf content</content>
         </fixtures>
         """
-        return [{
-                'type': i.tag,
-                'src': i.get('src'),
-                'target': i.get('target'),
-                'text': self._text(i),
-                } for i in element if i.tag in ('copy', 'template', 'content')]
+        data = []
+        for i in element:
+            item = dict({'type': i.tag}, **i.attrib)
+            text = self._text(i)
+            if text:
+                item['text'] = text
+            data.append(item)
+        return data

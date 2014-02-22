@@ -1,7 +1,7 @@
 <testcase>
   <summary>Dir names end with slash</summary>
   <fixtures>
-    <copy src="dir1/" target="hehe/" />
+    <copydir src="dir1/" target="hehe/" />
   </fixtures>
   <steps>
     test -d hehe

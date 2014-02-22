@@ -1,7 +1,7 @@
 <testcase>
   <summary>Copy a fixture dir into case workspace</summary>
   <fixtures>
-    <copy src="dir1" />
+    <copydir src="dir1" />
   </fixtures>
   <steps>
     test -d dir1
