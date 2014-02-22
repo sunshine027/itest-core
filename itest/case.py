@@ -394,6 +394,7 @@ class TestCase(unittest.TestCase):
         def _copy(source, target):
             makedirs(os.path.dirname(target))
             if os.path.isdir(source):
+                print source, target
                 shutil.copytree(source, target)
             else:
                 shutil.copy(source, target)
@@ -421,11 +422,13 @@ class TestCase(unittest.TestCase):
                 source = os.path.join(casedir, item['src'])
                 if not os.path.exists(source) and settings.fixtures_dir:
                     source = os.path.join(settings.fixtures_dir, item['src'])
+                source = source.rstrip(os.path.sep)
             elif item['type'] != 'content':
                 raise Exception("Attribute src can't be found")
 
             if 'target' in item and item['target']:
-                target = os.path.join(todir, item['target'])
+                target = os.path.join(todir,
+                                      item['target'].rstrip(os.path.sep))
             else:
                 target = os.path.join(todir, os.path.basename(source))
 

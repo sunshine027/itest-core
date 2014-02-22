@@ -1,0 +1,13 @@
+<testcase>
+  <summary>Vars defined in setup section
+can also be used in steps seciton</summary>
+  <setup>
+    a=1
+  </setup>
+  <steps>
+    [ "$a" == 1 ]
+  </steps>
+  <teardown>
+    echo value of a is $a
+  </teardown>
+</testcase>

@@ -1,0 +1,10 @@
+<testcase>
+  <summary>Copy a part of a dir</summary>
+  <fixtures>
+    <copy src="dir1/dir2" />
+  </fixtures>
+  <steps>
+    test -d dir2
+    test -f dir2/b
+  </steps>
+</testcase>

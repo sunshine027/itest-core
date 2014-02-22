@@ -1,0 +1,12 @@
+<testcase>
+  <summary>Dir names end with slash</summary>
+  <fixtures>
+    <copy src="dir1/" target="hehe/" />
+  </fixtures>
+  <steps>
+    test -d hehe
+    test -f hehe/a
+    test -d hehe/dir2
+    test -f hehe/dir2/b
+  </steps>
+</testcase>

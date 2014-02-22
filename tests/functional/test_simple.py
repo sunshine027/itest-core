@@ -34,21 +34,3 @@ class BasicTest(TestBase):
     @cd(CASES_PATH)
     def test_vars(self):
         self.assertPass("vars.xml")
-
-
-class SetupTeardownTest(TestBase):
-
-    @cd(CASES_PATH)
-    def test_setup_always_run(self):
-        self.assertWithText(["-vv", "setup.xml"],
-                            "This message only appears in setup section")
-
-    @cd(CASES_PATH)
-    def test_teardown_always_run(self):
-        self.assertWithText(["-vv", "teardown.xml"],
-                            "This message only appears in teardown section")
-
-    @cd(CASES_PATH)
-    def test_steps_wont_run_if_setup_failed(self):
-        self.assertWithoutText(["-vv", "setup_failed.xml"],
-                               "This message only appears in steps section")

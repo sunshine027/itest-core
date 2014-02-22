@@ -1,0 +1,12 @@
+<testcase>
+  <summary>Copy a fixture dir into case workspace</summary>
+  <fixtures>
+    <copy src="dir1" />
+  </fixtures>
+  <steps>
+    test -d dir1
+    test -f dir1/a
+    test -d dir1/dir2
+    test -f dir1/dir2/b
+  </steps>
+</testcase>
