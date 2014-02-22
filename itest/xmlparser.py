@@ -1,7 +1,11 @@
 """
 Parser of XML format of case file
 """
+import os
+import logging
 import xml.etree.ElementTree as ET
+
+log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 
 class Parser(object):
@@ -14,7 +18,12 @@ class Parser(object):
         Returns a dict represent a case
         """
         data = {}
-        root = ET.fromstring(xmldoc)
+        try:
+            root = ET.fromstring(xmldoc)
+        except ET.ParseError as err:
+            log.warn("Case syntax error: %s", str(err))
+            return
+
         for child in root:
             method = '_on_' + child.tag
             if hasattr(self, method):

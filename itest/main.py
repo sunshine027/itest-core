@@ -120,4 +120,6 @@ class TextTestRunner(unittest2.TextTestRunner):
 
 
 def main():
+    import logging
+    logging.basicConfig()
     TestProgram(testLoader=TestLoader(), testRunner=TextTestRunner)

@@ -56,11 +56,17 @@ class XunitTestResult(TextTestResult):
     def _add_failure(self, test, err):
         cls, name = id_split(test.id())
 
-        with open(test.meta.logname) as reader:
-            content = reader.read()
-        content = content.replace('\r', '\n')\
-            .decode('utf8', 'ignore').encode('utf8', 'ignore')
-        content = SHELL_COLOR_PATTERN.sub('', content)
+        def get_log():
+            with open(test.meta.logname) as reader:
+                content = reader.read()
+            content = content.replace('\r', '\n')\
+                .decode('utf8', 'ignore').encode('utf8', 'ignore')
+            return SHELL_COLOR_PATTERN.sub('', content)
+
+        if hasattr(test, 'meta'):
+            content = get_log()
+        else:
+            content = "Log file isn't available!"
 
         self.caselist.append(
             '<testcase classname="%(cls)s" name="%(name)s" time="%(taken).3f">'
