@@ -19,7 +19,6 @@ setup(name='itest',
       scripts=[
           'scripts/runtest',
           'scripts/imgdiff',
-          'scripts/convert2xml.py',
           'scripts/spm',
           ],
       )

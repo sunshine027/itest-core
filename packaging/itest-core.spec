@@ -67,7 +67,6 @@ Support Redhat, Debian, SuSE
 %{python_sitelib}/itest/*
 %{_bindir}/runtest
 %{_bindir}/imgdiff
-%{_bindir}/convert2xml.py
 
 %files -n spm
 %defattr(-,root,root,-)

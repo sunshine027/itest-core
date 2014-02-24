@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import uuid
-import shutil
 
 import unittest2 as unittest
 from unittest2 import SkipTest
@@ -282,7 +281,7 @@ class TestCase(unittest.TestCase):
         self.setup = fields.get('setup')
         self.teardown = fields.get('teardown')
         self.qa = fields.get('qa', ())
-        self.issue = fields.get('issue', {})
+        self.tracking = fields.get('tracking', {})
         self.conditions = fields.get('conditions', {})
         self.fixtures = [Fixture(os.path.dirname(self.filename),
                                  i)
@@ -389,18 +388,5 @@ class TestCase(unittest.TestCase):
         return path
 
     def _copy_fixtures(self):
-        if self.version != 'xml1.0' and settings.fixtures_dir:
-            return self._copy_all_fixtures(self.rundir)
-
         for item in self.fixtures:
             item.copy(self.rundir)
-
-    def _copy_all_fixtures(self, todir):
-        for name in os.listdir(settings.fixtures_dir):
-            source = os.path.join(settings.fixtures_dir, name)
-            target = os.path.join(todir, name)
-
-            if os.path.isdir(source):
-                shutil.copytree(source, target)
-            else:
-                shutil.copy(source, target)
