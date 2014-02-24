@@ -8,6 +8,7 @@ from unittest2 import TextTestResult
 from itest import conf
 from itest.utils import makedirs
 from itest.loader import TestLoader
+from itest import __version__
 
 
 ENVIRONMENT_VARIABLE = "ITEST_ENV_PATH"
@@ -36,6 +37,7 @@ class TestProgram(unittest2.TestProgram):
             return
 
         parser = argparse.ArgumentParser()
+        parser.add_argument('-V', '--version', action='version', version=__version__)
         parser.add_argument('-q', '--quiet', action='store_true',
                             help="minimal output")
         parser.add_argument('-v', '--verbose', action='count',
