@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 
 import unittest2 as unittest
 from jinja2 import Environment, FileSystemLoader
@@ -7,6 +8,8 @@ from jinja2 import Environment, FileSystemLoader
 from itest import xmlparser
 from itest.conf import settings
 from itest.case import TestCase
+
+log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 
 class BaseParser(object):
@@ -244,6 +247,7 @@ class FilePattern(object):
         if text.startswith('<'):  # assume it is a XML file
             data = xmlparser.Parser().parse(text)
             if not data:
+                log.warn("Can't load test case from %s", name)
                 return
             if 'tracking' in data:
                 # for backwards compability
