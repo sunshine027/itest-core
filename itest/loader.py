@@ -11,6 +11,38 @@ from itest.case import TestCase
 log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 
+def load_case(sel):
+    '''
+    Load tests from a single test select pattern `sel`
+    '''
+    suiteClass = unittest.TestSuite
+    def _is_test(ret):
+        return isinstance(ret, suiteClass) or \
+            isinstance(ret, TestCase)
+
+    suite = suiteClass()
+    stack = [sel]
+    while stack:
+        sel = stack.pop()
+        for pattern in suite_patterns.all():
+            if callable(pattern):
+                pattern = pattern()
+
+            ret = pattern.load(sel)
+            if not ret:
+                continue
+
+            if _is_test(ret):
+                suite.addTest(ret)
+            elif isinstance(ret, list):
+                stack.extend(ret)
+            else:
+                stack.append(ret)
+            break
+
+    return suite
+
+
 class TestLoader(unittest.TestLoader):
 
     def loadTestsFromModule(self, _module, _use_load_tests=True):
@@ -19,38 +51,7 @@ class TestLoader(unittest.TestLoader):
         return self.suiteClass()
 
     def loadTestsFromName(self, name, module=None):
-        return self.load(name)
-
-    def load(self, sel):
-        '''
-        Load tests from a single test select pattern `sel`
-        '''
-        def _is_test(ret):
-            return isinstance(ret, self.suiteClass) or \
-                isinstance(ret, TestCase)
-
-        suite = self.suiteClass()
-        stack = [sel]
-
-        while stack:
-            sel = stack.pop()
-            for pattern in suite_patterns.all():
-                if callable(pattern):
-                    pattern = pattern()
-
-                ret = pattern.load(sel)
-                if not ret:
-                    continue
-
-                if _is_test(ret):
-                    suite.addTest(ret)
-                elif isinstance(ret, list):
-                    stack.extend(ret)
-                else:
-                    stack.append(ret)
-                break
-
-        return suite
+        return load_case(name)
 
 
 class AliasPattern(object):

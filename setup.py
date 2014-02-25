@@ -13,9 +13,14 @@ setup(name='itest',
       license='GPLv2',
       platforms=['Linux'],
       include_package_data=True,
-      packages=['itest', 'itest.conf', 'imgdiff', 'spm'],
+      packages=['itest', 'itest.conf', 'imgdiff', 'spm', 'nosexcase'],
       package_data={'': ['*.html']},
       data_files=[('/etc', ['spm/spm.yml'])],
+      entry_points={
+          'nose.plugins.0.10': [
+              'xcase = nosexcase.xcase:XCase'
+              ]
+          },
       scripts=[
           'scripts/runtest',
           'scripts/imgdiff',

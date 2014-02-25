@@ -19,3 +19,9 @@ Depends: ${misc:Depends}, ${python:Depends},
  python-jinja2, python-yaml
 Description: Smart package management tool on Linux
  A wrapper of yum, apt-get, zypper command. Support Redhat, Debian, SuSE
+
+Package: nosexcase
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends},
+ itest-core, python-nose
+Description: A nose plugin that supports running test cases defined in XML format

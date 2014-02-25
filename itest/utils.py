@@ -60,3 +60,10 @@ def makedirs(path):
         import errno
         if err.errno != errno.EEXIST:
             raise
+
+
+def in_dir(child, parent):
+    """
+    Check whether `child` is inside `parent`
+    """
+    return os.path.realpath(child).startswith(os.path.realpath(parent))

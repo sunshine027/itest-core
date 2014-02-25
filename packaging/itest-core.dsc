@@ -1,7 +1,7 @@
 Format: 1.0
 Source: itest-core
 Version: 1.7
-Binary: itest-core, spm
+Binary: itest-core, spm, nosexcase
 Maintainer: Huang Hao<hao.h.huang@intel.com>, Junchun Guan <junchunx.guan@intel.com>
 Architecture: all
 Standards-Version: 3.7.1

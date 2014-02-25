@@ -52,6 +52,16 @@ Smart package management tool on Linux
 A wrapper of yum, apt-get, zypper command
 Support Redhat, Debian, SuSE
 
+%package -n nosexcase
+Summary:        nose plugin
+Requires: itest-core
+Requires: python-nose
+
+%description -n nosexcase
+This is a nose plugin that provides test cases
+definition in XML format
+Use this plugin with ``nosetests --with-xcase xml case``
+
 %prep
 %setup -q -n %{name}-%{version}
 
@@ -74,3 +84,8 @@ Support Redhat, Debian, SuSE
 %{python_sitelib}/spm/*
 %{_bindir}/spm
 %{_sysconfdir}/spm.yml
+
+%files -n nosexcase
+%defattr(-,root,root,-)
+%dir %{python_sitelib}/nosexcase
+%{python_sitelib}/nosexcase/*
