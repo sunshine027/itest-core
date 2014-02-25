@@ -5,8 +5,12 @@ import os
 import logging
 import xml.etree.ElementTree as ET
 
-log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
+try:
+    from xml.etree.ElementTree import ParseError
+except ImportError:
+    from xml.parsers.expat import ExpatError as ParseError
 
+log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 class Parser(object):
     """
@@ -20,7 +24,7 @@ class Parser(object):
         data = {}
         try:
             root = ET.fromstring(xmldoc)
-        except ET.ParseError as err:
+        except ParseError as err:
             log.warn("Case syntax error: %s", str(err))
             return
 

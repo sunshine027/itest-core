@@ -73,4 +73,5 @@ echo test2
 </conditions>
 </testcase>'''))
 
-
+    def test_bad_case(self):
+        self.assertEquals(None, Parser().parse('I am not XML format!'))
