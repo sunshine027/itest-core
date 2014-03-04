@@ -37,7 +37,8 @@ class TestProgram(unittest2.TestProgram):
             return
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('-V', '--version', action='version', version=__version__)
+        parser.add_argument('-V', '--version', action='version',
+                            version=__version__)
         parser.add_argument('-q', '--quiet', action='store_true',
                             help="minimal output")
         parser.add_argument('-v', '--verbose', action='count',

@@ -12,6 +12,7 @@ except ImportError:
 
 log = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
+
 class Parser(object):
     """
     The XML case parser

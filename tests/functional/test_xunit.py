@@ -27,3 +27,8 @@ class XunitTest(TestBase):
     def test_xml_validation(self):
         runtest("--with-xunit", "simple.xml", "simple_false.xml")
         ET.parse('xunit.xml')
+
+    @cd(CASES_PATH)
+    def test_non_ascii_chars(self):
+        runtest("--with-xunit", "unicode_false.xml")
+        ET.parse("xunit.xml")

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase>
+  <summary>Chinese in log file should be correctly write into xunit.xml</summary>
+  <steps>
+  echo 中文可以有
+  false
+  </steps>
+</testcase>

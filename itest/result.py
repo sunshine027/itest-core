@@ -1,17 +1,10 @@
 import re
 import time
+import xml.etree.ElementTree as ET
+
 from unittest2 import TextTestResult
-from xml.sax import saxutils
 
 from itest.case import id_split
-
-
-def escape_string(string):
-    return saxutils.escape(string, {'"': '&quot;',
-                                    "'": '&apos;',
-                                    '\n': ' ',
-                                    })
-
 
 SHELL_COLOR_PATTERN = re.compile(r'\x1b\[[0-9]*[mK]')
 
@@ -22,7 +15,7 @@ class XunitTestResult(TextTestResult):
 
     def __init__(self, *args, **kw):
         super(XunitTestResult, self).__init__(*args, **kw)
-        self.caselist = []
+        self.testsuite = ET.Element('testsuite')
         self._timer = time.time()
 
     def startTest(self, test):
@@ -59,37 +52,31 @@ class XunitTestResult(TextTestResult):
         def get_log():
             with open(test.meta.logname) as reader:
                 content = reader.read()
-            content = content.replace('\r', '\n')\
-                .decode('utf8', 'ignore').encode('utf8', 'ignore')
-            return SHELL_COLOR_PATTERN.sub('', content)
+            content = content.replace('\r', '\n').replace('\x00', '')
+            content = SHELL_COLOR_PATTERN.sub('', content)
+            return content.decode('utf8', 'ignore')
 
         if hasattr(test, 'meta'):
             content = get_log()
         else:
             content = "Log file isn't available!"
 
-        self.caselist.append(
-            '<testcase classname="%(cls)s" name="%(name)s" time="%(taken).3f">'
-            '<failure message="%(message)s"><![CDATA[%(log)s]]>'
-            '</failure></testcase>' %
-            {'cls': cls,
-             'name': name,
-             'taken': self._time_taken(),
-             'message': escape_string(str(err)),
-             'log': content,
-             })
+        testcase = ET.SubElement(self.testsuite, 'testcase',
+                                 classname=cls,
+                                 name=name,
+                                 time="%.3f" % self._time_taken())
+        failure = ET.SubElement(testcase, 'failure',
+                                message=str(err))
+        failure.text = content
 
     def addSuccess(self, test):
         "Called when a test has completed successfully"
         super(XunitTestResult, self).addSuccess(test)
         cls, name = id_split(test.id())
-        self.caselist.append(
-            '<testcase classname="%(cls)s" name="%(name)s" '
-            'time="%(taken).3f" />' %
-            {'cls': cls,
-             'name': name,
-             'taken': self._time_taken(),
-             })
+        ET.SubElement(self.testsuite, 'testcase',
+                      classname=cls,
+                      name=name,
+                      taken="%.3f" % self._time_taken())
 
     def stopTestRun(self):
         """Called once after all tests are executed.
@@ -97,17 +84,13 @@ class XunitTestResult(TextTestResult):
         See stopTest for a method called after each test.
         """
         super(XunitTestResult, self).stopTestRun()
-        xml = ['<?xml version="1.0" encoding="utf8"?>'
-               '<testsuite tests="%(total)d" errors="%(errors)d" '
-               'failures="%(failures)d" skip="%(skipped)d">'
-               % {'total': self.testsRun,
-                  'errors': len(self.errors),
-                  'failures': len(self.failures),
-                  'skipped': len(self.skipped),
-                  }]
-        xml.extend(self.caselist)
-        xml.append('</testsuite>')
-        xml = '\n'.join(xml)
+
+        ts = self.testsuite
+        ts.set("tests", str(self.testsRun))
+        ts.set("errors", str(len(self.errors)))
+        ts.set("failures", str(len(self.failures)))
+        ts.set("skip", str(len(self.skipped)))
+        xml = ET.tostring(ts)
 
         with open(self.xunit_file, 'w') as fp:
             fp.write(xml)
