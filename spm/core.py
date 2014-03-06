@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import platform
+from spm import conf
 
 
 class BaseDistro(object):
@@ -12,6 +13,7 @@ class BaseDistro(object):
         self.name = name
         self.version = version
         self.arch = arch
+        self.config = conf.load_conf()
 
     def install(self, pkg):
         pass
@@ -34,6 +36,16 @@ class BaseDistro(object):
     def clean(self):
         pass
 
+    def get_package_dependency(self, pkg):
+        """Get package dependency from $HOME/.spm.yml"""
+        packages = []
+        if self.config and pkg in self.config:
+            if 'default' in self.config[pkg]['dependency']:
+                packages = self.config[pkg]['dependency']['default']
+            if distro.name in self.config[pkg]['dependency']:
+                packages += self.config[pkg]['dependency'][distro.name]
+        return packages
+
 
 class RpmDistro(BaseDistro):
     def check_version(self, pkg):
@@ -41,7 +53,7 @@ class RpmDistro(BaseDistro):
         p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
         ret = p.wait()
         if ret:
-            return ('N/A', pkg)
+            return (pkg, 'N/A')
         else:
             return (pkg, p.communicate()[0])
 
@@ -113,7 +125,7 @@ class SuSEDistro(RpmDistro):
     def install(self, pkg):
         os.system('zypper -n --no-gpg-checks install -f %s' % pkg)
 
-    def uninstall(pkg):
+    def uninstall(self, pkg):
         os.system('zypper remove -u -y %s' % pkg)
 
     def refresh(self):
@@ -147,7 +159,7 @@ class UbuntuDistro(DebDistro):
     def install(self, pkg):
         os.system('apt-get install -y --force-yes %s' % pkg)
 
-    def uninstall(pkg):
+    def uninstall(self, pkg):
         os.system('apt-get autoremove -y --force-yes %s' % pkg)
 
     def refresh(self):

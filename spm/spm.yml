@@ -1,0 +1,45 @@
+gbs:
+  dependency:
+    default:
+      - gbs
+      - gbs-api
+      - gbs-export
+      - gbs-remotebuild
+      - git-buildpackage-rpm
+      - git-buildpackage-common
+      - depanneur
+      - build
+      - qemu-arm-static
+      - createrepo
+      - pristine-tar
+      - librpm-tizen
+      - pbzip2
+      - deltarpm
+      - osc
+      - mic
+    Ubuntu:
+      - libcrypt-ssleay-perl
+    openSuSE:
+      - perl-Crypt-SSLeay
+      - build-mkdrpms
+      - python-deltarpm
+      - build-initvm-i586
+      - build-initvm-x86_64
+    CentOS:
+      - perl-Crypt-SSLeay
+      - python-deltarpm
+      - build-initvm-i586
+      - build-initvm-x86_64
+    Fedora:
+      - perl-Crypt-SSLeay
+      - python-deltarpm
+      - build-initvm-i586
+      - build-initvm-x86_64
+mic:
+  dependency:
+    default:
+      - libzypp
+      - python-zypp
+      - satsolver-tools
+      - qemu-arm-static
+      - syslinux

@@ -77,7 +77,12 @@ def version_parser(parser):
 
     def handler(args):
         distro = core.distro
-        print distro.check_version(args.pkg)
+        packages = distro.get_package_dependency(args.pkg)
+        if packages:
+            for pkg in packages:
+                print distro.check_version(pkg)
+        else:
+            print distro.check_version(args.pkg)
 
     parser.set_defaults(handler=handler)
     return parser
