@@ -15,6 +15,7 @@ setup(name='itest',
       include_package_data=True,
       packages=['itest', 'itest.conf', 'imgdiff', 'spm'],
       package_data={'': ['*.html']},
+      data_files=[('/etc', ['spm/spm.yml'])],
       scripts=[
           'scripts/runtest',
           'scripts/imgdiff',

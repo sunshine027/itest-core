@@ -1,0 +1,44 @@
+<html lang="en">
+	<head>
+		<title>{{ package }} {{ type }} test report</title>
+	</head>
+	<style>
+		.diff { color: blue }
+		table { border-collapse: collapse; margin-bottom: 1em }
+		th { background-color: #F3F3F3 }
+		td, th { border: 1px solid grey; padding: 3px }
+		table.right th { text-align: right }
+	</style>
+	<body>
+		<h1>{{ package }} {{ type }} test report</h1>
+		<h2>from: <a href="{{ install_repo }}">{{ install_repo }}</a></h2>
+		{% if type == "upgrade" %}
+		<h2>to: <a href="{{ upgrade_repo }}">{{ upgrade_repo }}</a></h2>
+		{% endif %}
+		<h1>Dependencies</h1>
+		<table class="right">
+		{% if type == "upgrade" %}
+			<tr><th>Version diff</th><td>Before</td><td>After</td><td>Install</td></tr>
+			{% for pkg, val in package_list.iteritems() %}
+			<tr><th>{{ pkg }}</th><td>{{ val.before }}</td>
+				{% if val.before != val.after %}
+				<td class="diff">{{ val.after }}</td>
+				{% else %}
+				<td>{{ val.after }}</td>
+				{% endif %}
+				{% if val.install != val.after %}
+				<td class="diff">{{ val.install }}</td>
+				{% else %}
+				<td>{{ val.install }}</td>
+				{% endif %}
+			</tr>
+			{% endfor %}
+		{% else %}
+			<tr><th>Package</th><td>Version</td></tr>
+			{% for pkg, val in package_list.iteritems() %}
+			<tr><th>{{ pkg }}</th><td>{{ val.before }}</td></tr>
+			{% endfor %}
+		{% endif %}
+		</table>
+	</body>
+</html>

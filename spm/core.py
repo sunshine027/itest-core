@@ -68,7 +68,7 @@ class DebDistro(BaseDistro):
                              stderr=subprocess.PIPE)
         ret = p.wait()
         if ret:
-            return ('N/A', pkg)
+            return (pkg, 'N/A')
         else:
             m = re.search('Version: .*', p.communicate()[0])
             return (pkg,  m.group().split()[1])

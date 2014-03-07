@@ -38,6 +38,14 @@ Functional testing utility
 
 %package -n spm
 Summary:	smart package management tool
+Requires:   python-jinja2
+Requires:   python-yaml
+%if "%{?python_version}" < "2.7"
+Requires:   python-ordereddict
+%endif
+%if ! 0%{?suse_version}
+Requires:   yum-plugin-remove-with-leaves
+%endif
 
 %description -n spm
 Smart package management tool on Linux
@@ -66,3 +74,4 @@ Support Redhat, Debian, SuSE
 %dir %{python_sitelib}/spm
 %{python_sitelib}/spm/*
 %{_bindir}/spm
+%{_sysconfdir}/spm.yml
