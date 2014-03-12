@@ -247,8 +247,7 @@ class FilePattern(object):
         if text.startswith('<'):  # assume it is a XML file
             data = xmlparser.Parser().parse(text)
             if not data:
-                log.warn("Can't load test case from %s", name)
-                return
+                raise Exception("Can't load test case from %s" % name)
             if 'tracking' in data:
                 # for backwards compability
                 data['issue'] = data.pop('tracking')
