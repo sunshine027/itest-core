@@ -132,6 +132,7 @@ class SuSEDistro(RpmDistro):
         os.system('zypper refresh')
 
     def _repofile(self, reponame, url):
+        url = os.path.join(url, self.name + '_' + self.version)
         repocontent = """[%s]
 name=%s
 enabled=1
