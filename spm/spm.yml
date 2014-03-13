@@ -19,7 +19,7 @@ gbs:
       - mic
     Ubuntu:
       - libcrypt-ssleay-perl
-    openSuSE:
+    openSUSE:
       - perl-Crypt-SSLeay
       - build-mkdrpms
       - python-deltarpm
@@ -35,11 +35,16 @@ gbs:
       - python-deltarpm
       - build-initvm-i586
       - build-initvm-x86_64
-mic:
+
+mic-native:
   dependency:
     default:
+      - mic-native
+      - mic
       - libzypp
       - python-zypp
+      - python-zypp-tizen
       - satsolver-tools
       - qemu-arm-static
+      - qemu-user-static
       - syslinux
