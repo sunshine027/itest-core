@@ -1,0 +1,6 @@
+usr/lib/python*/*packages/itest/*.py
+usr/lib/python*/*packages/itest/conf/*.py
+usr/lib/python*/*packages/imgdiff/*.py
+usr/bin/runtest
+usr/bin/convert2xml.py
+usr/bin/imgdiff

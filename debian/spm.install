@@ -1,0 +1,4 @@
+usr/lib/python*/*packages/spm/*.py
+usr/lib/python*/*packages/spm/templates/*.html
+usr/bin/spm
+etc/spm.yml
