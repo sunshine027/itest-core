@@ -47,7 +47,7 @@ class TestLoader(unittest.TestLoader):
 
     def loadTestsFromModule(self, _module, _use_load_tests=True):
         if settings.env_root:
-            return self.load(settings.env_root)
+            return load_case(settings.env_root)
         return self.suiteClass()
 
     def loadTestsFromName(self, name, module=None):
