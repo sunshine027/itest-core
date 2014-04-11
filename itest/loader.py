@@ -161,7 +161,7 @@ class IntersectionPattern(object):
             return inter
 
         loader = self.loader_class()
-        many = [loader.load(part) for part in sel.split('&&')]
+        many = [load_case(part) for part in sel.split('&&')]
 
         return loader.suiteClass(intersection(many))
 
