@@ -167,7 +167,11 @@ class UbuntuDistro(DebDistro):
         os.system('apt-get update')
 
     def _repofile(self, reponame, url):
-        url = os.path.join(url, self.name + '_' + self.version)
+        if self.name.lower().startswith('debian'):
+            platform = self.name + '_' + self.version.split('.')[0]
+        else:
+            platform = self.name + '_' + self.version
+        url = os.path.join(url, platform)
         return """deb %s /""" % url
 
     def clean(self):
@@ -185,6 +189,8 @@ def init_distro():
         distro = SuSEDistro('openSUSE', version, arch)
     elif name == 'Ubuntu':
         distro = UbuntuDistro('Ubuntu', version, arch)
+    elif name.lower() == 'debian':
+        distro = UbuntuDistro('Debian', version, arch)
     return distro
 
 distro = init_distro()
