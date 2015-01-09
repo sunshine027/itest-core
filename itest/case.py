@@ -357,17 +357,17 @@ class TestCase(unittest.TestCase):
         defined but not match.
         '''
         labels = set((i.lower() for i in get_machine_labels()))
-
         # blacklist has higher priority, if it match both black and white
         # lists, it will be skipped
-        intersection = labels & self.conditions.get('distblacklist', set())
-        if intersection:
-            raise SkipTest('by distribution blacklist:%s' %
-                           ','.join(intersection))
+        if self.conditions.get('blacklist'):
+            intersection = labels & set(self.conditions.get('blacklist'))
+            if intersection:
+                raise SkipTest('by distribution blacklist:%s' %
+                               ','.join(intersection))
 
-        kw = 'distwhitelist'
-        if kw in self.conditions:
-            intersection = labels & self.conditions[kw]
+        kw = 'whitelist'
+        if self.conditions.get(kw):
+            intersection = labels & set(self.conditions[kw])
             if not intersection:
                 raise SkipTest('not in distribution whitelist:%s' %
                                ','.join(self.conditions[kw]))
