@@ -2,7 +2,10 @@ import re
 import time
 import xml.etree.ElementTree as ET
 
-from unittest2 import TextTestResult
+try:
+    from unittest2 import TextTestResult
+except ImportError:
+    from unittest import TextTestResult
 
 from itest.case import id_split
 

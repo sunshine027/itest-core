@@ -2,8 +2,12 @@ import os
 import sys
 import argparse
 
-import unittest2
-from unittest2 import TextTestResult
+try:
+    import unittest2 as unittest
+    from unittest2 import TextTestResult
+except ImportError:
+    import unittest
+    from unittest import TextTestResult
 
 from itest import conf
 from itest.utils import makedirs
@@ -29,7 +33,7 @@ def find_test_project_from_cwd():
         path = os.path.dirname(path)
 
 
-class TestProgram(unittest2.TestProgram):
+class TestProgram(unittest.TestProgram):
 
     def parseArgs(self, argv):
         if len(argv) > 1 and argv[1].lower() == 'discover':
@@ -112,7 +116,7 @@ class TestProgram(unittest2.TestProgram):
         self.createTests()
 
 
-class TextTestRunner(unittest2.TextTestRunner):
+class TextTestRunner(unittest.TextTestRunner):
 
     def __init__(self, stream=None, descriptions=True, verbosity=1,
                  failfast=False, buffer=False, resultclass=None):

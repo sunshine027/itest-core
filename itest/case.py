@@ -3,8 +3,13 @@ import sys
 import time
 import uuid
 
-import unittest2 as unittest
-from unittest2 import SkipTest
+try:
+    import unittest2 as unittest
+    from unittest2 import SkipTest
+except ImportError:
+    import unittest
+    from unittest import SkipTest
+
 import pexpect
 if hasattr(pexpect, 'spawnb'):  # pexpect-u-2.5
     spawn = pexpect.spawnb
