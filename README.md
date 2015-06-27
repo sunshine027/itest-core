@@ -4,7 +4,6 @@ install itest
 -------------
 sudo python setup.py install
 
-=====
 
 prepare for test environment
 ----------------------------
@@ -64,7 +63,7 @@ running.
 Each command line runs one by one in the same order as they occur in case. If
 any command exit with nonzero, the whole case will exit immediately and is
 treated as failed. The only condition that a case pass is when the last command
-exit with code 0. 
+exit with code 0.
 
 For example:
 
@@ -119,3 +118,5 @@ after *steps* finish. Its content should be valid shell code.
 
 Whatever *steps* failed or successed, this section gaurantee to be run.
 Result of this section doesn't affect result of the case.
+=======
+# itest-core
